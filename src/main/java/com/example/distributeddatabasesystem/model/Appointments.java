@@ -15,11 +15,11 @@ public class Appointments {
     private int id;
     private String status;
     private LocalDateTime timequeued;
-    private LocalDateTime queuedDate;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
-    private String type;
-    private String virtual;
+    private LocalDateTime queuedate;
+    private LocalDateTime starttime;
+    private LocalDateTime endtime;
+    private String appttype;
+    private String isvirtual;
 
     private int px_age;
     private String px_gender;
@@ -60,44 +60,44 @@ public class Appointments {
         this.timequeued = timequeued;
     }
 
-    public LocalDateTime getQueuedDate() {
-        return queuedDate;
+    public LocalDateTime getQueuedate() {
+        return queuedate;
     }
 
-    public void setQueuedDate(LocalDateTime queuedDate) {
-        this.queuedDate = queuedDate;
+    public void setQueuedate(LocalDateTime queuedate) {
+        this.queuedate = queuedate;
     }
 
-    public LocalDateTime getStartTime() {
-        return startTime;
+    public LocalDateTime getStarttime() {
+        return starttime;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
+    public void setStartTime(LocalDateTime starttime) {
+        this.starttime = starttime;
     }
 
-    public LocalDateTime getEndTime() {
-        return endTime;
+    public LocalDateTime getEndtime() {
+        return endtime;
     }
 
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
+    public void setEndtime(LocalDateTime endtime) {
+        this.endtime = endtime;
     }
 
-    public String getType() {
-        return type;
+    public String getAppttype() {
+        return appttype;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setAppttype(String appttype) {
+        this.appttype = appttype;
     }
 
-    public String getVirtual() {
-        return virtual;
+    public String getIsvirtual() {
+        return isvirtual;
     }
 
-    public void setVirtual(String virtual) {
-        this.virtual = virtual;
+    public void setIsvirtual(String isvirtual) {
+        this.isvirtual = isvirtual;
     }
 
     public int getPx_age() {
