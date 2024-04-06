@@ -3,10 +3,12 @@ package com.example.distributeddatabasesystem.controller;
 import com.example.distributeddatabasesystem.model.Appointments;
 import com.example.distributeddatabasesystem.service.AppointmentsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/appointments")
@@ -19,4 +21,38 @@ public class AppointmentsController {
         appointmentsService.saveAppointment(appointment);
         return "New appointment was added.";
     }
+
+    @GetMapping("/getAll")
+    public List<Appointments> getAll() {
+        return appointmentsService.getAllAppointments();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Appointments> get(@PathVariable Integer id) {
+        try {
+            Appointments appointment = appointmentsService.getAppointment(id);
+            return new ResponseEntity<>(appointment, HttpStatus.OK);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public String delete(@PathVariable Integer id) {
+        appointmentsService.delete(id);
+        return "Appointment successfully deleted.";
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Appointments> update(@RequestBody Appointments appointment, @PathVariable Integer id) {
+        try {
+            Appointments existingAppointment = appointmentsService.getAppointment(id);
+            appointmentsService.saveAppointment(appointment);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+
 }
