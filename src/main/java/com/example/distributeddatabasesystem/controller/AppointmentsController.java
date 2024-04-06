@@ -16,7 +16,7 @@ public class AppointmentsController {
 
     @PostMapping("/add")
     public String add(@RequestBody Appointments appointment) {
-        appointmentsService.saveAppointments(appointment);
+        appointmentsService.saveAppointment(appointment);
         return "New appointment was added.";
     }
 }

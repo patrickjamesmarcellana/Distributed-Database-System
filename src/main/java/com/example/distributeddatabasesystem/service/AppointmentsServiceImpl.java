@@ -12,7 +12,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     private AppointmentsRepository appointmentsRepository;
 
     @Override
-    public Appointments saveAppointments(Appointments appointment) {
+    public Appointments saveAppointment(Appointments appointment) {
         return appointmentsRepository.save(appointment);
     }
 }
