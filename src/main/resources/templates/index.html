@@ -3,9 +3,127 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Distributed Database System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="index.js" defer></script>
+    <link rel="stylesheet" href="/index.css">
 </head>
-<body>
-    <h1>HELLO!</h1>
+<body class="flex justify-center">
+<div class="w-full max-w-[1440px] flex flex-col items-center justify-center">
+    <div class="my-[4vh] w-full flex flex-col items-center">
+        <div class="text-4xl font-bold">Distributed Database System</div>
+        <select name="operation" id="operation" required class="text-md font-bold mt-6 rounded border-2 border-black p-1">
+            <option value="" disabled selected hidden>Select Database Operation</option>
+            <option value="add">Insert</option>
+            <option value="get">Find</option>
+            <option value="getAll">Find All</option>
+            <option value="update">Update</option>
+            <option value="delete">Delete</option>
+        </select>
+        <div class="getAll-op w-3/4 mt-4 flex justify-center">
+            <div class="w-1/4 px-6 pt-2 pb-4">
+                <div class="font-extrabold text-xl">Appointment Data</div>
+                <hr class="my-1 border-black border-[1.5px]">
+
+                <div class="font-bold"><span class="update-text hidden">New</span> ID</div>
+                <input name="id" id="id" type="number" required placeholder="Enter ID" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="insert-delete-op font-bold mt-1"><span class="update-text hidden">New</span> Status</div>
+                <select name="status" id="status" required class="insert-delete-op w-full text-xs mt-1 rounded border-2 border-black p-1">
+                    <option value="" disabled selected hidden>Select Status</option>
+                    <option value="Complete">Complete</option>
+                    <option value="Queued">Queued</option>
+                    <option value="NoShow">NoShow</option>
+                    <option value="Cancel">Cancel</option>
+                    <option value="Serving">Serving</option>
+                    <option value="Skip">Skip</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Admitted">Admitted</option>
+                </select>
+                <div class="insert-delete-op font-bold mt-2"><span class="update-text hidden">New</span> Time Queued</div>
+                <input name="timequeued" id="timequeued" required type="datetime-local" class="insert-delete-op w-full text-xs mt-1 rounded border-2 border-black p-0.5">
+
+                <div class="insert-delete-op font-bold mt-2"><span class="update-text hidden">New</span> Queue Date</div>
+                <input name="queuedate" id="queuedate" required type="datetime-local" class="insert-delete-op w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="insert-delete-op font-bold mt-2"><span class="update-text hidden">New</span> Start Time</div>
+                <input name="starttime" id="starttime" required type="datetime-local" class="insert-delete-op w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="insert-delete-op font-bold mt-2"><span class="update-text hidden">New</span> End Time</div>
+                <input name="endtime" id="endtime" required type="datetime-local" class="insert-delete-op w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="insert-delete-op font-bold mt-2"><span class="update-text hidden">New</span> Appointment Type</div>
+                <select name="appttype" id="appttype" required class="insert-delete-op w-full text-xs mt-1 rounded border-2 border-black p-1">
+                    <option value="" disabled selected hidden>Select Appointment Type</option>
+                    <option value="Consultation">Consultation</option>
+                    <option value="Appointment">Appointment</option>
+                </select>
+
+                <div class="insert-delete-op font-bold mt-2"><span class="update-text hidden">New</span> Is Virtual?</div>
+                <select name="isvirtual" id="isvirtual" required class="insert-delete-op w-full text-xs mt-1 rounded border-2 border-black p-1">
+                    <option value="" disabled selected hidden>Select True or False</option>
+                    <option value="True">True</option>
+                    <option value="False">False</option>
+                </select>
+            </div>
+            <div class="insert-delete-op w-1/4 flex flex-col  px-6 pt-2 pb-4">
+                <div class="font-extrabold text-xl">Patient Data</div>
+                <hr class="my-1 border-black border-[1.5px]">
+
+                <div class="font-bold mt-2"><span class="update-text hidden">New</span> Age</div>
+                <input name="px_age" id="px_age" type="number" required placeholder="Enter Patient Age" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="font-bold mt-2"><span class="update-text hidden">New</span> Gender</div>
+                <select name="px_gender" id="px_gender" required class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+                    <option value="" disabled selected hidden>Select Gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                </select>
+            </div>
+            <div class="insert-delete-op w-1/4 flex flex-col  px-6 pt-2 pb-4">
+                <div class="font-extrabold text-xl">Clinic Data</div>
+                <hr class="my-1 border-black border-[1.5px]">
+
+                <div class="font-bold"><span class="update-text hidden">New</span> Hospital Name</div>
+                <input name="clinic_hospitalname" id="clinic_hospitalname" type="text" required placeholder="Enter Hospital Name" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="font-bold mt-2"><span class="update-text hidden">New</span> Is Hospital?</div>
+                <select name="clinic_ishospital" id="clinic_ishospital" required class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+                    <option value="" disabled selected hidden>Select True or False</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+
+                <div class="font-bold mt-2"><span class="update-text hidden">New</span> City</div>
+                <input name="clinic_city" id="clinic_city" type="text" required placeholder="Enter City" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="font-bold mt-2"><span class="update-text hidden">New</span> Province</div>
+                <input name="clinic_province" id="clinic_province" type="text" required placeholder="Enter Province" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="font-bold mt-2"><span class="update-text hidden">New</span> Region</div>
+                <input name="clinic_regionname" id="clinic_regionname" type="text" required placeholder="Enter Region" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+            </div>
+            <div class="insert-delete-op w-1/4 flex flex-col  px-6 pt-2 pb-4">
+                <div class="font-extrabold text-xl">Doctor Data</div>
+                <hr class="my-1 border-black border-[1.5px]">
+
+                <div class="font-bold mt-2"><span class="update-text hidden">New</span> Main Specialty</div>
+                <input name="doctor_mainspecialty" id="doctor_mainspecialty" type="text" required placeholder="Enter Main Specialty" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+
+                <div class="font-bold mt-2"><span class="update-text hidden">New</span> Age</div>
+                <input name="doctor_age" id="doctor_age" type="number" required placeholder="Enter Age" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+            </div>
+        </div>
+        <div class="mt-4">
+            <button type="submit" id="submit-btn" class="rounded-md px-4 py-2 black bg-green-500">Submit</button>
+        </div>
+    </div>
+    <div id="data-display">
+
+        <!-- Display data here -->
+    </div>
+
+</div>
 </body>
 </html>
