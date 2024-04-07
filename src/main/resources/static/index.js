@@ -43,6 +43,20 @@ $("#submit-btn").click(async (e) => {
             .catch((error) => console.error(error));
         console.log(response);
     }
+
+    if (currentOperation === "delete") {
+        const formData = formToObject();
+        const apptId = formData["id"];
+        console.log("delete operation, got:", apptId);
+        const response = await fetch(`/appointments/delete/${apptId}`, {
+            method: "DELETE",
+        })
+            .then((response) => {
+                return response.text();
+            })
+            .catch((error) => console.error(error));
+        console.log(response);
+    }
 });
 
 function formToObject() {
