@@ -22,6 +22,8 @@ $("#operation").change(() => {
         $(".getAll-op").removeClass("hidden");
         $(".insert-delete-op").removeClass("hidden");
     }
+
+    $("#data-display").addClass("hidden");
 });
 
 $("#submit-btn").click(async (e) => {
@@ -56,6 +58,63 @@ $("#submit-btn").click(async (e) => {
             })
             .catch((error) => console.error(error));
         console.log(response);
+    }
+
+    if (currentOperation === "getAll") {
+      console.log("getAll operation");
+      const response = await fetch("/appointments/getAll", {
+          method: "GET",
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error("Error fetching data");
+              }
+              return response.json();
+          })
+          .then(appointments => {
+              console.log("Appointments received:", appointments);
+
+              const tableContainer = $("<div>").addClass("px-4");
+              const table = $("<table>").addClass("text-sm text-left rtl:text-right mt-1 overflow-x-auto overflow-y-auto h-screen");
+              tableContainer.append(table);
+
+              // Create the table header
+              const thead = $("<thead>").addClass("text-xs text-black uppercase rounded border-b dark:text-black");
+              const headerRow = $("<tr>");
+
+              const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Doctor Main Specialty", "Doctor Age"];
+
+              $.each(headerLabels, function(index, label) {
+                  $("<th>").text(label).addClass("px-6 py-3").appendTo(headerRow);
+              });
+
+              headerRow.appendTo(thead);
+              thead.appendTo(table);
+
+              // Create the table body
+              const tbody = $("<tbody>").attr("id", "appointments-list");
+
+              // Populate table with appointments
+              $.each(appointments, function(index, appointment) {
+                  const row = $("<tr>").addClass("border-b hover:bg-gray-300");
+
+                  const appointmentAttributes = ["id", "status", "timequeued", "queuedate", "starttime", "endtime", "appttype", "isvirtual", "px_age", "px_gender", "clinic_hospitalname", "clinic_ishospital", "clinic_city", "clinic_province", "clinic_regionname", "doctor_mainspecialty", "doctor_age"];
+
+                  $.each(appointmentAttributes, function(index, attr) {
+                      $("<td>").text(appointment[attr]).addClass("px-6 py-4").appendTo(row);
+                  });
+
+                  tbody.append(row);
+              });
+
+              table.append(tbody);
+
+              // Append the table to a container in the document
+              $("#data-display").empty().append(table);
+              $("#data-display").removeClass("hidden");
+          })
+          .catch((error) => console.error(error));
+
     }
 });
 

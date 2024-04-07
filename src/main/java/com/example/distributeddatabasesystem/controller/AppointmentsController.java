@@ -23,8 +23,13 @@ public class AppointmentsController {
     }
 
     @GetMapping("/getAll")
-    public List<Appointments> getAll() {
-        return appointmentsService.getAllAppointments();
+    public ResponseEntity<List<Appointments>> getAll() {
+        try {
+            List<Appointments> appointments = appointmentsService.getAllAppointments();
+            return new ResponseEntity<>(appointments, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @GetMapping("/{id}")
