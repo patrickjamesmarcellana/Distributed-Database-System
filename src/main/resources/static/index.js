@@ -57,6 +57,23 @@ $("#submit-btn").click(async (e) => {
             .catch((error) => console.error(error));
         console.log(response);
     }
+
+    if (currentOperation === "update") {
+        const data = formToObject();
+        console.log("update operation, got:", data);
+        const response = await fetch(`/appointments/update/${data["id"]}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        })
+            .then((response) => {
+                return response;
+            })
+            .catch((error) => console.error(error));
+        console.log(response);
+    }
 });
 
 function formToObject() {
