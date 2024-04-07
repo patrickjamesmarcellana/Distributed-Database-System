@@ -17,9 +17,13 @@ public class AppointmentsController {
     private AppointmentsService appointmentsService;
 
     @PostMapping("/add")
-    public String add(@RequestBody Appointments appointment) {
-        appointmentsService.saveAppointment(appointment);
-        return "New appointment was added.";
+    public ResponseEntity<Void> add(@RequestBody Appointments appointment) {
+        try {
+            appointmentsService.saveAppointment(appointment);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping("/getAll")
@@ -43,9 +47,13 @@ public class AppointmentsController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public String delete(@PathVariable Integer id) {
-        appointmentsService.delete(id);
-        return "Appointment successfully deleted.";
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+        try {
+            appointmentsService.delete(id);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PutMapping("/update/{id}")
@@ -55,7 +63,7 @@ public class AppointmentsController {
             appointmentsService.saveAppointment(appointment);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -24,10 +24,14 @@ $("#operation").change(() => {
     }
 
     $("#data-display").addClass("hidden");
+    $("#error-display").addClass("hidden");
 });
 
 $("#submit-btn").click(async (e) => {
     e.preventDefault();
+
+    $("#data-display").addClass("hidden")
+    $("#error-display").addClass("hidden");
 
     if (currentOperation === "add") {
         const data = formToObject();
@@ -40,9 +44,33 @@ $("#submit-btn").click(async (e) => {
             body: JSON.stringify(data),
         })
             .then((response) => {
+                if (!response.ok) {
+                     throw new Error("Error adding appointment");
+                }
                 return response.text();
             })
-            .catch((error) => console.error(error));
+            .then((data) => {
+                console.log(data);
+
+                const displayMessage = $("<div>")
+                    .addClass("p-4 text-sm text-green-800 rounded-lg bg-gray-300 dark:bg-green-400 dark:text-green-950")
+                    .attr("role", "alert")
+                    .html("<span class='font-medium'>Success:</span> Appointment has successfully been added.");
+
+                $("#error-display").html(displayMessage);
+                $("#error-display").removeClass("hidden");
+            })
+            .catch((error) => {
+                console.error(error);
+
+                const errorMessage = $("<div>")
+                    .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
+                    .attr("role", "alert")
+                    .html("<span class='font-medium'>Error:</span> An error occurred while adding the appointment. Please try again.");
+
+                $("#error-display").html(errorMessage);
+                $("#error-display").removeClass("hidden");
+            });
         console.log(response);
     }
 
@@ -54,9 +82,35 @@ $("#submit-btn").click(async (e) => {
             method: "DELETE",
         })
             .then((response) => {
+                if (!response.ok) {
+                     throw new Error("Error deleting appointment");
+                }
                 return response.text();
             })
-            .catch((error) => console.error(error));
+            .then((data) => {
+
+                console.log(data);
+
+                const displayMessage = $("<div>")
+                    .addClass("p-4 text-sm text-green-800 rounded-lg bg-gray-300 dark:bg-green-400 dark:text-green-950")
+                    .attr("role", "alert")
+                    .html("<span class='font-medium'>Success:</span> Appointment has successfully been deleted.");
+
+                $("#error-display").html(displayMessage);
+                $("#error-display").removeClass("hidden");
+            })
+            .catch((error) => {
+
+                console.error(error);
+
+                const errorMessage = $("<div>")
+                    .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
+                    .attr("role", "alert")
+                    .html("<span class='font-medium'>Error:</span> An error occurred while deleting the appointment. Please try again.");
+
+                $("#error-display").html(errorMessage);
+                $("#error-display").removeClass("hidden");
+            });
         console.log(response);
     }
 
@@ -71,9 +125,36 @@ $("#submit-btn").click(async (e) => {
             body: JSON.stringify(data),
         })
             .then((response) => {
-                return response;
+                console.log(response)
+                if (!response.ok) {
+                     throw new Error("Error updating appointment");
+                }
+                return response.text();
             })
-            .catch((error) => console.error(error));
+            .then((data) => {
+
+                console.log(data);
+
+                const displayMessage = $("<div>")
+                    .addClass("p-4 text-sm text-green-800 rounded-lg bg-gray-300 dark:bg-green-400 dark:text-green-950")
+                    .attr("role", "alert")
+                    .html("<span class='font-medium'>Success:</span> Appointment has successfully been updated.");
+
+                $("#error-display").html(displayMessage);
+                $("#error-display").removeClass("hidden");
+            })
+            .catch((error) => {
+
+                console.error(error);
+
+                const errorMessage = $("<div>")
+                    .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
+                    .attr("role", "alert")
+                    .html("<span class='font-medium'>Error:</span> An error occurred while updating the appointment. Please try again.");
+
+                $("#error-display").html(errorMessage);
+                $("#error-display").removeClass("hidden");
+            });
         console.log(response);
     }
 
@@ -95,12 +176,10 @@ $("#submit-btn").click(async (e) => {
               const table = $("<table>").addClass("text-sm text-left rtl:text-right mt-1 overflow-x-auto overflow-y-auto h-screen");
               tableContainer.append(table);
 
-              // Create the table header
               const thead = $("<thead>").addClass("text-xs text-black uppercase rounded border-b dark:text-black");
               const headerRow = $("<tr>");
 
               const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Doctor Main Specialty", "Doctor Age"];
-
               $.each(headerLabels, function(index, label) {
                   $("<th>").text(label).addClass("px-6 py-3").appendTo(headerRow);
               });
@@ -108,10 +187,7 @@ $("#submit-btn").click(async (e) => {
               headerRow.appendTo(thead);
               thead.appendTo(table);
 
-              // Create the table body
               const tbody = $("<tbody>").attr("id", "appointments-list");
-
-              // Populate table with appointments
               $.each(appointments, function(index, appointment) {
                   const row = $("<tr>").addClass("border-b hover:bg-gray-300");
 
@@ -126,11 +202,83 @@ $("#submit-btn").click(async (e) => {
 
               table.append(tbody);
 
-              // Append the table to a container in the document
               $("#data-display").empty().append(table);
               $("#data-display").removeClass("hidden");
           })
-          .catch((error) => console.error(error));
+           .catch((error) => {
+
+              console.error(error);
+
+              const errorMessage = $("<div>")
+                  .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
+                  .attr("role", "alert")
+                  .html("<span class='font-medium'>Error:</span> An error occurred while finding all appointments. Please try again.");
+
+              $("#error-display").html(errorMessage);
+              $("#error-display").removeClass("hidden");
+          });
+
+    }
+
+    if (currentOperation === "get") {
+          console.log("get operation");
+          const data = formToObject();
+          const response = await fetch(`/appointments/${data.id}`, {
+              method: "GET",
+              })
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error("Error fetching data");
+                  }
+                  return response.json();
+              })
+              .then(appointment => {
+                  console.log("Appointment received:", appointment);
+
+                  const tableContainer = $("<div>").addClass("px-4");
+                  const table = $("<table>").addClass("text-sm text-left rtl:text-right mt-1 overflow-x-auto overflow-y-auto h-0.5");
+                  tableContainer.append(table);
+
+                  const thead = $("<thead>").addClass("text-xs text-black uppercase rounded border-b dark:text-black");
+                  const headerRow = $("<tr>");
+
+                  const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Doctor Main Specialty", "Doctor Age"];
+
+                  $.each(headerLabels, function(index, label) {
+                      $("<th>").text(label).addClass("px-6 py-3").appendTo(headerRow);
+                  });
+
+                  headerRow.appendTo(thead);
+                  thead.appendTo(table);
+
+                  const tbody = $("<tbody>").attr("id", "appointments-list");
+
+                  const row = $("<tr>").addClass("border-b hover:bg-gray-300");
+
+                  const appointmentAttributes = ["id", "status", "timequeued", "queuedate", "starttime", "endtime", "appttype", "isvirtual", "px_age", "px_gender", "clinic_hospitalname", "clinic_ishospital", "clinic_city", "clinic_province", "clinic_regionname", "doctor_mainspecialty", "doctor_age"];
+
+                  $.each(appointmentAttributes, function(index, attr) {
+                      $("<td>").text(appointment[attr]).addClass("px-6 py-4").appendTo(row);
+                  });
+                  tbody.append(row);
+
+                  table.append(tbody);
+
+                  $("#data-display").empty().append(table);
+                  $("#data-display").removeClass("hidden");
+              })
+              .catch((error) => {
+
+                console.error(error);
+
+                const errorMessage = $("<div>")
+                    .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
+                    .attr("role", "alert")
+                    .html("<span class='font-medium'>Error:</span> An error occurred while finding this appointment. Please try again.");
+
+                $("#error-display").html(errorMessage);
+                $("#error-display").removeClass("hidden");
+              });
 
     }
 });
