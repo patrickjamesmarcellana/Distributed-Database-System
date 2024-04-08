@@ -33,6 +33,8 @@ public class Appointments {
     private String doctor_mainspecialty;
     private int doctor_age;
 
+    private String island;
+
     public Appointments() {
     }
 
@@ -72,7 +74,7 @@ public class Appointments {
         return starttime;
     }
 
-    public void setStartTime(LocalDateTime starttime) {
+    public void setStarttime(LocalDateTime starttime) {
         this.starttime = starttime;
     }
 
@@ -171,4 +173,13 @@ public class Appointments {
     public void setDoctor_age(int doctor_age) {
         this.doctor_age = doctor_age;
     }
+
+    public String getIsland() {
+        return island;
+    }
+
+    public void setIsland(String island) {
+        this.island = island;
+    }
+
 }
