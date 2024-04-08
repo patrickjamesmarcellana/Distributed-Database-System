@@ -35,25 +35,28 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
     @Override
     public Appointments saveAppointment(Appointments appointment) {
-        node1JdbcTemplate.update("INSERT INTO appointments (id, status, timequeued, queuedate, starttime, endtime, appttype, isvirtual, px_age, px_gender, clinic_hospitalname, clinic_ishospital, clinic_city, clinic_province, clinic_regionname, doctor_mainspecialty, doctor_age, island)",
-                                appointment.getId(),
-                                appointment.getStatus(),
-                appointment.getTimequeued(),
-                appointment.getQueuedate(),
-                appointment.getStarttime(),
-                appointment.getEndtime(),
-                appointment.getAppttype(),
-                appointment.getIsvirtual(),
-                appointment.getPx_age(),
-                appointment.getPx_gender(),
-                appointment.getClinic_hospitalname(),
-                appointment.getClinic_ishospital(),
-                appointment.getClinic_city(),
-                appointment.getClinic_province(),
-                appointment.getClinic_regionname(),
-                appointment.getDoctor_mainspecialty(),
-                appointment.getDoctor_age(),
-                appointment.getIsland());
+        try {
+            node1JdbcTemplate.update("INSERT INTO appointments (status, timequeued, queuedate, starttime, endtime, appttype, isvirtual, px_age, px_gender, clinic_hospitalname, clinic_ishospital, clinic_city, clinic_province, clinic_regionname, doctor_mainspecialty, doctor_age, island) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    appointment.getStatus(),
+                    appointment.getTimequeued(),
+                    appointment.getQueuedate(),
+                    appointment.getStarttime(),
+                    appointment.getEndtime(),
+                    appointment.getAppttype(),
+                    appointment.getIsvirtual(),
+                    appointment.getPx_age(),
+                    appointment.getPx_gender(),
+                    appointment.getClinic_hospitalname(),
+                    appointment.getClinic_ishospital(),
+                    appointment.getClinic_city(),
+                    appointment.getClinic_province(),
+                    appointment.getClinic_regionname(),
+                    appointment.getDoctor_mainspecialty(),
+                    appointment.getDoctor_age(),
+                    appointment.getIsland());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
 //        return appointmentsRepository.save(appointment);
         return appointment;

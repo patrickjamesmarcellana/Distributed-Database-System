@@ -68,4 +68,14 @@ public class AppointmentsController {
     }
 
 
+
+    @PostMapping("/transaction")
+    public String executeTransaction(@RequestBody Object data)
+    {
+        System.out.println(data);
+        return "Done";
+
+    }
+
+
 }
