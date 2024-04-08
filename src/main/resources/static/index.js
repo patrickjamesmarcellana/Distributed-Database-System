@@ -42,6 +42,18 @@ $("#operation").change(() => {
         $(".insert-delete-op").removeClass("hidden");
     }
 
+    if (currentOperation === "update") {
+        $(".update-text").removeClass("hidden")
+    } else {
+        $(".update-text").addClass("hidden")
+    }
+
+    if (currentOperation === "add") {
+        $(".insert-op").addClass("hidden")
+    } else {
+        $(".insert-op").removeClass("hidden")
+    }
+
     $("#data-display").addClass("hidden");
     $("#error-display").addClass("hidden");
 });
@@ -90,6 +102,29 @@ $("#submit-btn").click(async (e) => {
 
     if (currentOperation === "add") {
         const data = formToObject();
+        data["id"] = undefined;
+
+        // map island according to region
+        switch (data["clinic_regionname"]) {
+            case "Ilocos Region (I)":
+            case "Cagayan Valley (II)":
+            case "Central Luzon (III)":
+            case "CALABARZON (IV-A)":
+            case "MIMAROPA (IV-B)":
+            case "Bicol Region (V)":
+            case "National Capital Region (NCR)":
+            case "Cordillera Administrative Region (CAR)": data["island"] = "Luzon"; break;
+            case "Western Visayas (VI)":
+            case "Central Visayas (VII)":
+            case "Eastern Visayas (VIII)": data["island"] = "Visayas"; break;
+            case "Zamboanga Peninsula (IX)":
+            case "Northern Mindanao (X)":
+            case "Davao Region (XI)":
+            case "SOCCSKSARGEN (Cotabato Region) (XII)":
+            case "Caraga (XIII)":
+            case "Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)": data["island"] = "Mindanao"; break;
+        }
+
         console.log("add operation, got:", data);
         const response = await fetch("/appointments/add", {
             method: "POST",
@@ -171,6 +206,28 @@ $("#submit-btn").click(async (e) => {
 
     if (currentOperation === "update") {
         const data = formToObject();
+
+        // map island according to region
+        switch (data["clinic_regionname"]) {
+            case "Ilocos Region (I)":
+            case "Cagayan Valley (II)":
+            case "Central Luzon (III)":
+            case "CALABARZON (IV-A)":
+            case "MIMAROPA (IV-B)":
+            case "Bicol Region (V)":
+            case "National Capital Region (NCR)":
+            case "Cordillera Administrative Region (CAR)": data["island"] = "Luzon"; break;
+            case "Western Visayas (VI)":
+            case "Central Visayas (VII)":
+            case "Eastern Visayas (VIII)": data["island"] = "Visayas"; break;
+            case "Zamboanga Peninsula (IX)":
+            case "Northern Mindanao (X)":
+            case "Davao Region (XI)":
+            case "SOCCSKSARGEN (Cotabato Region) (XII)":
+            case "Caraga (XIII)":
+            case "Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)": data["island"] = "Mindanao"; break;
+        }
+
         console.log("update operation, got:", data);
         const response = await fetch(`/appointments/update/${data["id"]}`, {
             method: "PUT",
