@@ -67,15 +67,26 @@ public class AppointmentsController {
         }
     }
 
-
-
     @PostMapping("/transaction")
-    public String executeTransaction(@RequestBody Object data)
+    public String executeTransaction(@RequestBody Transaction data)
     {
-        System.out.println(data);
+        System.out.println(data.node);
+        System.out.println(data.isolationLevel);
+        System.out.println(data.transaction);
         return "Done";
 
     }
 
+}
 
+class Transaction {
+    String node;
+    String isolationLevel;
+    String transaction;
+
+    public Transaction(String node, String isolationLevel, String transaction) {
+        this.node = node;
+        this.isolationLevel = isolationLevel;
+        this.transaction = transaction;
+    }
 }
