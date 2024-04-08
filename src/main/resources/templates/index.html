@@ -8,6 +8,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script type="text/javascript" src="index.js" defer></script>
     <link rel="stylesheet" href="/index.css">
+    <title>Distributed Database System</title>
 </head>
 <body class="flex justify-center">
 <div class="w-full max-w-[1440px] flex flex-col items-center justify-center">
@@ -106,7 +107,26 @@
                 <input name="clinic_province" id="clinic_province" type="text" required placeholder="Enter Province" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
 
                 <div class="font-bold mt-2"><span class="update-text hidden">New</span> Region</div>
-                <input name="clinic_regionname" id="clinic_regionname" type="text" required placeholder="Enter Region" class="w-full text-xs mt-1 rounded border-2 border-black p-1">
+                <select name="clinic_regionname" id="clinic_regionname" required class="overflow-y-scroll w-full text-xs mt-1 rounded border-2 border-black p-1">
+                    <option value="" disabled selected hidden>Select Region</option>
+                    <option value="National Capital Region (NCR)">National Capital Region (NCR)</option>
+                    <option value="Cordillera Administrative Region (CAR)">Cordillera Administrative Region (CAR)</option>
+                    <option value="Ilocos Region (I)">Ilocos Region (I)</option>
+                    <option value="Cagayan Valley (II)">Cagayan Valley (II)</option>
+                    <option value="Central Luzon (III)">Central Luzon (III)</option>
+                    <option value="CALABARZON (IV-A)">CALABARZON (IV-A)</option>
+                    <option value="MIMAROPA (IV-B)">MIMAROPA (IV-B)</option>
+                    <option value="Bicol Region (V)">Bicol Region (V)</option>
+                    <option value="Western Visayas (VI)">Western Visayas (VI)</option>
+                    <option value="Central Visayas (VII)">Central Visayas (VII)</option>
+                    <option value="Eastern Visayas (VIII)">Eastern Visayas (VIII)</option>
+                    <option value="Zamboanga Peninsula (IX)">Zamboanga Peninsula (IX)</option>
+                    <option value="Northern Mindanao (X)">Northern Mindanao (X)</option>
+                    <option value="Davao Region (XI)">Davao Region (XI)</option>
+                    <option value="SOCCSKSARGEN (Cotabato Region) (XII)">SOCCSKSARGEN (Cotabato Region) (XII)</option>
+                    <option value="Caraga (XIII)">Caraga (XIII)</option>
+                    <option value="Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)">Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)</option>
+                </select>
             </div>
             <div class="insert-delete-op w-1/4 flex flex-col  px-6 pt-2 pb-4">
                 <div class="font-extrabold text-xl">Doctor Data</div>
