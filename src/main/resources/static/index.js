@@ -27,6 +27,42 @@ $("#operation").change(() => {
     $("#error-display").addClass("hidden");
 });
 
+$("#id").change(async () => {
+    // determine selected database operation
+    const currentOperation = $("#operation option:selected").attr("value");
+
+    if (currentOperation !== "update") {
+        return
+    }
+
+    const update_id = $("#id").val()
+    try {
+        const response = await fetch("/appointments/" + update_id)
+        const data = await response.json()
+        console.log(data)
+
+        // change input default values
+        $("#status").val(data.status)
+        $("#timequeued").val(data.timequeued)
+        $("#queuedate").val(data.queuedate)
+        $("#starttime").val(data.starttime)
+        $("#endtime").val(data.endtime)
+        $("#appttype").val(data.appttype)
+        $("#isvirtual").val(data.isvirtual)
+        $("#px_age").val(data.px_age)
+        $("#px_gender").val(data.px_gender)
+        $("#clinic_hospitalname").val(data.clinic_hospitalname)
+        $("#clinic_ishospital").val(data.clinic_ishospital)
+        $("#clinic_city").val(data.clinic_city)
+        $("#clinic_province").val(data.clinic_province)
+        $("#clinic_regionname").val(data.clinic_regionname)
+        $("#doctor_mainspecialty").val(data.doctor_mainspecialty)
+        $("#doctor_age").val(data.doctor_age)
+    } catch (err) {
+        console.log ("ID does not exist in the database")
+    }
+})
+
 $("#submit-btn").click(async (e) => {
     e.preventDefault();
 
