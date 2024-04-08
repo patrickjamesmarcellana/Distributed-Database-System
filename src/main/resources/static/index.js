@@ -1,12 +1,6 @@
 let currentOperation;
 
-// change displayed input fields depending on selected database operation
-$("#operation").change(() => {
-    // determine selected database operation
-    currentOperation = $("#operation option:selected").attr("value");
-    console.log("Selected Database Operation: " + currentOperation);
-
-    // reset default values of input fields
+function clearFields() {
     $("#id").val('')
     $("#status").val('')
     $("#timequeued").val('')
@@ -24,6 +18,17 @@ $("#operation").change(() => {
     $("#clinic_regionname").val('')
     $("#doctor_mainspecialty").val('')
     $("#doctor_age").val('')
+}
+
+
+// change displayed input fields depending on selected database operation
+$("#operation").change(() => {
+    // determine selected database operation
+    currentOperation = $("#operation option:selected").attr("value");
+    console.log("Selected Database Operation: " + currentOperation);
+
+    // reset default values of input fields
+    clearFields()
 
     // show only the ID input when operation is get or delete
     if (currentOperation === "get" || currentOperation === "delete") {
@@ -162,6 +167,7 @@ $("#submit-btn").click(async (e) => {
                 $("#error-display").removeClass("hidden");
             });
         console.log(response);
+        clearFields();
     }
 
     if (currentOperation === "delete") {
