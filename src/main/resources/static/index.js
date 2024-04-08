@@ -6,6 +6,25 @@ $("#operation").change(() => {
     currentOperation = $("#operation option:selected").attr("value");
     console.log("Selected Database Operation: " + currentOperation);
 
+    // reset default values of input fields
+    $("#id").val('')
+    $("#status").val('')
+    $("#timequeued").val('')
+    $("#queuedate").val('')
+    $("#starttime").val('')
+    $("#endtime").val('')
+    $("#appttype").val('')
+    $("#isvirtual").val('')
+    $("#px_age").val('')
+    $("#px_gender").val('')
+    $("#clinic_hospitalname").val('')
+    $("#clinic_ishospital").val('')
+    $("#clinic_city").val('')
+    $("#clinic_province").val('')
+    $("#clinic_regionname").val('')
+    $("#doctor_mainspecialty").val('')
+    $("#doctor_age").val('')
+
     // show only the ID input when operation is get or delete
     if (currentOperation === "get" || currentOperation === "delete") {
         $(".getAll-op").removeClass("hidden");
