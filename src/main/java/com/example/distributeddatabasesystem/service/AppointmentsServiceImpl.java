@@ -234,6 +234,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         // store result
         Appointments appointment = extractResult(queryResult);
+        connection.close();
         return appointment;
     }
 
@@ -280,6 +281,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         // store result
         Appointments appointment = extractResult(queryResult);
+        connection.close();
         return appointment;
     }
 
@@ -317,6 +319,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                 connection.rollback();
             }
         }
+        connection.close();
     }
 
     // nodePort = {20189, 20190, 20191}
