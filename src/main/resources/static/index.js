@@ -444,7 +444,7 @@ $("#submit-btn").click(async (e) => {
             displaySuccess("read")
         } catch (err) {
             console.error(err)
-            displayError("reading")
+            displayError("reading this appointment.")
         }
     } else if (data.operation === "Update") {
         // write (update) operation
@@ -463,7 +463,7 @@ $("#submit-btn").click(async (e) => {
             displaySuccess("updated")
         } catch (err) {
             console.error(err)
-            displayError("updating")
+            displayError("updating this appointment.")
         }
     } else if (data.operation === "Delete") {
         // write (delete) operation
@@ -482,8 +482,24 @@ $("#submit-btn").click(async (e) => {
             }
         } catch (err) {
             console.error(err)
-            displayError("deleting")
+            displayError("deleting this appointment.")
         }
+    } else if(data.operation === "Find All") {
+        // find all operation
+        try {
+            const response = await fetch(`/appointments/read?node=${data.node}&transaction=${data.transaction}&operation=${data.operation}`, {method: "GET"})
+            if (!response.ok) {
+                throw new Error("Error fetching data");
+            }
+            const result = response.json();
+            console.log(response);
+
+        } catch (err) {
+            console.error(err)
+            displayError("finding all appointments")
+        }
+
+
     } else {
         // should be impossible
         console.log("Incorrect mapping of database operation in index.js")
@@ -510,7 +526,7 @@ function displayResult(appointment) {
     const thead = $("<thead>").addClass("text-xs text-black uppercase rounded border-b dark:text-black");
     const headerRow = $("<tr>");
 
-    const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Doctor Main Specialty", "Doctor Age"];
+    const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Island", "Doctor Main Specialty", "Doctor Age"];
 
     $.each(headerLabels, function(index, label) {
         $("<th>").text(label).addClass("px-6 py-3").appendTo(headerRow);
@@ -523,7 +539,7 @@ function displayResult(appointment) {
 
     const row = $("<tr>").addClass("border-b hover:bg-gray-300");
 
-    const appointmentAttributes = ["id", "status", "timequeued", "queuedate", "starttime", "endtime", "appttype", "isvirtual", "px_age", "px_gender", "clinic_hospitalname", "clinic_ishospital", "clinic_city", "clinic_province", "clinic_regionname", "doctor_mainspecialty", "doctor_age"];
+    const appointmentAttributes = ["id", "status", "timequeued", "queuedate", "starttime", "endtime", "appttype", "isvirtual", "px_age", "px_gender", "clinic_hospitalname", "clinic_ishospital", "clinic_city", "clinic_province", "clinic_regionname", "island", "doctor_mainspecialty", "doctor_age"];
 
     $.each(appointmentAttributes, function(index, attr) {
         $("<td>").text(appointment[attr]).addClass("px-6 py-4").appendTo(row);
@@ -540,7 +556,7 @@ function displayError(operation) {
     const errorMessage = $("<div>")
         .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
         .attr("role", "alert")
-        .html("<span class='font-medium'>Error:</span> An error occurred while " + operation + " this appointment. Please try again.");
+        .html("<span class='font-medium'>Error:</span> An error occurred while " + operation + ". Please try again.");
 
     $("#error-display").html(errorMessage);
     $("#error-display").removeClass("hidden");

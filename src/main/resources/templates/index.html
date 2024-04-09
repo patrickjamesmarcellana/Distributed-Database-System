@@ -42,6 +42,7 @@
             <option value="Read">Read</option>
             <option value="Update">Write (Update)</option>
             <option value="Delete">Write (Delete)</option>
+            <option value="Find All">Find All</option>
         </select> <br>
 
         <div>Transaction:</div>
@@ -50,18 +51,18 @@
         <div class="">ID:</div>
         <input id="id" name="id" class="input-id text-xs w-96 font-bold mt-2 border-2 border-black p-0.5" required placeholder="Enter ID" type="number"><br>
 
+        <div class="">Sleep After the Read/Write Operation?</div>
+        <select name="sleep-or-not" id="sleep-or-not" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
+            <option value="" disabled selected hidden>Sleep After Read/Write Operation?</option>
+            <option value="sleep">Sleep</option>
+            <option value="not-sleep">Don't Sleep</option>
+        </select> <br>
+
         <div>Commit?</div>
         <select name="commit-or-rollback" id="commit-or-rollback" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
             <option value="" disabled selected hidden>Select Commit or Not Commit</option>
             <option value="commit">Commit</option>
             <option value="rollback">Not Commit</option>
-        </select> <br>
-
-        <select name="sleep-or-not" id="sleep-or-not" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
-            <option value="" disabled selected hidden>Sleep After Read/Write Operation?</option>
-            <option value="sleep">Sleep</option>
-            <option value="not-sleep
-">Don't Sleep</option>
         </select> <br>
 
         <button type="submit" id="submit-btn" class="rounded-md px-4 py-2 black bg-green-400">Submit</button>

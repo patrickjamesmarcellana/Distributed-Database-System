@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 
+import static java.lang.Math.log;
 import static java.lang.Math.max;
 
 
@@ -148,7 +149,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
     }
 
-    @Scheduled(fixedDelay=1000)
+    @Scheduled(fixedDelay=5000)
     public void replicationTask() {
         System.out.println("Starting replication task #1 - load data to slave");
         replicationSubtask(node2JdbcTemplate, new HashSet<>(List.of("Luzon")), node1JdbcTemplate, node3JdbcTemplate);
@@ -272,6 +273,10 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         switch(data.getCommitOrRollback()) {
             case "commit" -> {
                 connection.commit();
+                // Update
+                PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
+                logQuery.setInt(1, data.getId());
+                logQuery.executeUpdate();
             } default -> { // rollback
                 connection.rollback();
             }
@@ -319,6 +324,9 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         switch(data.getCommitOrRollback()) {
             case "commit" -> {
                 connection.commit();
+                PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
+                logQuery.setInt(1, data.getId());
+                logQuery.executeUpdate();
             } default -> { // rollback
                 connection.rollback();
             }
@@ -377,7 +385,6 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     if (isIslandHere) {
                         return connection;
                     }
-                    return connection;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -413,7 +420,6 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     if (isIslandHere) {
                         return connection;
                     }
-                    return connection;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -481,6 +487,12 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         appointment.setModified_by(queryResult.getString("modified_by"));
 
         return appointment;
+    }
+
+    public PreparedStatement deleteAppointment(Connection connection, Appointments appointments, boolean updateLastModifiedTimestamp) throws SQLException {
+        PreparedStatement deleteStatement = connection.prepareStatement("DELETE FROM appointments WHERE id = ?;");
+        deleteStatement.setInt(1, appointments.getId());
+        return deleteStatement;
     }
 
     public PreparedStatement upsertAppointment(Connection connection, Appointments appointments, boolean updateLastModifiedTimestamp) throws SQLException {
