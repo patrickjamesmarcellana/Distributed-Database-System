@@ -2,7 +2,6 @@ package com.example.distributeddatabasesystem.service;
 
 import com.example.distributeddatabasesystem.model.Appointments;
 import com.example.distributeddatabasesystem.model.Transaction;
-import com.example.distributeddatabasesystem.repository.AppointmentsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -30,10 +29,6 @@ import static java.lang.Math.max;
 @EnableAutoConfiguration
 @Service
 public class AppointmentsServiceImpl implements AppointmentsService {
-
-    @Autowired
-    private AppointmentsRepository appointmentsRepository;
-
     @Autowired
     @Qualifier("node1JdbcTemplate")
     JdbcTemplate node1JdbcTemplate;
