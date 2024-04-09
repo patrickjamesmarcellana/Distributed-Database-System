@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Isolation;
@@ -20,6 +21,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
+
+import static java.lang.Math.max;
 
 
 @EnableAutoConfiguration
@@ -40,6 +45,114 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     @Autowired
     @Qualifier("node3JdbcTemplate")
     JdbcTemplate node3JdbcTemplate;
+
+    private void replicationSubtask(JdbcTemplate destination, HashSet<String> destionationIslands, JdbcTemplate source1, JdbcTemplate source2) {
+        Connection destinationConnection = null;
+        try {
+            destinationConnection = Objects.requireNonNull(destination.getDataSource()).getConnection();
+            destinationConnection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            destinationConnection.setAutoCommit(false);
+
+            System.out.println("Connected to " + destinationConnection.getMetaData().getURL());
+        } catch (SQLException e) {
+            System.out.println("Failed to connect to destination node");
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+
+        if(destinationConnection != null) {
+            final LocalDateTime DEFAULT_DATETIME = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
+            ArrayList<PreparedStatement> updateLastModifiedOfSources = new ArrayList<>();
+            ArrayList<JdbcTemplate> sources = new ArrayList<>(List.of(source1, source2));
+            HashMap<Integer, Appointments> masterAppointments = new HashMap<>();
+            for(JdbcTemplate source : sources) {
+                try {
+                    Connection sourceConnection = Objects.requireNonNull(source.getDataSource()).getConnection();
+                    sourceConnection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+
+                    PreparedStatement lastReadTimeStampQuery = destinationConnection.prepareStatement("SELECT last_modified FROM mco2.node_params WHERE url = ?;");
+                    lastReadTimeStampQuery.setString(1, sourceConnection.getMetaData().getURL());
+                    ResultSet lastReadTimestampQueryResult = lastReadTimeStampQuery.executeQuery();
+
+                    LocalDateTime lastReadTimestamp = lastReadTimestampQueryResult.next() ? lastReadTimestampQueryResult.getObject("last_modified", LocalDateTime.class) : DEFAULT_DATETIME;
+                    System.out.println("Latest data from " + sourceConnection.getMetaData().getURL() + " was from " + lastReadTimestamp);
+
+                    PreparedStatement otherNodeQuery = sourceConnection.prepareStatement("SELECT * FROM appointments WHERE last_modified > ? AND last_modified < UTC_TIMESTAMP()"); // last_modified < UTC_TIMESTAMP() is to prevent incomplete data still being written, island not included (to detect island changes)
+                    otherNodeQuery.setObject(1, lastReadTimestamp);
+
+                    ResultSet otherNodeResults = otherNodeQuery.executeQuery();
+                    LocalDateTime lastModified = DEFAULT_DATETIME;
+                    while(otherNodeResults.next()) {
+                        Appointments appointment = extractResult(otherNodeResults);
+                        Integer id = appointment.getId();
+                        System.out.println("Found data of id=" + id);
+
+                        if(!masterAppointments.containsKey(id)) {
+                            masterAppointments.put(id, appointment);
+                            lastModified = appointment.getLast_modified().isAfter(lastModified) ? appointment.getLast_modified() : lastModified;
+                        } else {
+                            // prioritize later appointment
+                            if(appointment.getLast_modified().isAfter(masterAppointments.get(id).getLast_modified())) {
+                                masterAppointments.put(id, appointment);
+                                lastModified = appointment.getLast_modified().isAfter(lastModified) ? appointment.getLast_modified() : lastModified;
+                            }
+                        }
+                    }
+
+                    // if there is new data, update the last modified timestamp of the destination node
+                    if(lastModified.isAfter(DEFAULT_DATETIME)) {
+                        PreparedStatement updateLastModified = destinationConnection.prepareStatement("INSERT INTO mco2.node_params (url, last_modified) VALUES(?, ?) ON DUPLICATE KEY UPDATE last_modified = VALUES(last_modified);");
+                        System.out.println(lastModified);
+                        updateLastModified.setString(1, sourceConnection.getMetaData().getURL());
+                        updateLastModified.setObject(2, lastModified);
+                        updateLastModifiedOfSources.add(updateLastModified);
+                    }
+                } catch (SQLException | NullPointerException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // load to destination
+            try {
+                System.out.println("Writing to " + destinationConnection.getMetaData().getURL());
+                for(Appointments appointment : masterAppointments.values()) {
+                    if(destionationIslands.contains(appointment.getIsland())) {
+                        // save appointment
+                        System.out.println("Writing data of id=" + appointment.getId());
+                        PreparedStatement upsertStatement = upsertAppointment(destinationConnection, appointment, false /* do not update timestamp */);
+                        upsertStatement.executeUpdate();
+                    } else {
+                        // delete appointment if exists (used on slave nodes)
+                        PreparedStatement deleteStatement = destinationConnection.prepareStatement("DELETE FROM appointments WHERE id = ?;");
+                        deleteStatement.setInt(1, appointment.getId());
+                        deleteStatement.executeUpdate();
+                    }
+                }
+
+                for(PreparedStatement updateLastModified : updateLastModifiedOfSources) {
+                    updateLastModified.executeUpdate();
+                }
+
+                destinationConnection.commit();
+                destinationConnection.close();
+
+            } catch (SQLException e) {
+                System.out.println("Failed to write to destination node");
+                e.printStackTrace();
+            }
+        }
+
+
+
+    }
+
+    @Scheduled(fixedDelay=1000)
+    public void replicationTask() {
+        System.out.println("Starting replication task #1 - load data to slave");
+        replicationSubtask(node2JdbcTemplate, new HashSet<>(List.of("Luzon")), node1JdbcTemplate, node3JdbcTemplate);
+        replicationSubtask(node3JdbcTemplate, new HashSet<>(List.of("Visayas/Mindanao")), node1JdbcTemplate, node2JdbcTemplate);
+    }
 
 //    @Override
 //    public Appointments saveAppointment(Appointments appointment) {
@@ -170,7 +283,62 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         appointment.setDoctor_mainspecialty(queryResult.getString("doctor_mainspecialty"));
         appointment.setDoctor_age(queryResult.getInt("doctor_age"));
         appointment.setIsland(queryResult.getString("island"));
+        appointment.setLast_modified(queryResult.getObject("last_modified", LocalDateTime.class));
+        appointment.setModified_by(queryResult.getString("modified_by"));
 
         return appointment;
+    }
+
+    public PreparedStatement upsertAppointment(Connection connection, Appointments appointments, boolean updateLastModifiedTimestamp) throws SQLException {
+        PreparedStatement upsertStatement = connection.prepareStatement("INSERT INTO appointments (id, status, timequeued, queuedate, starttime, endtime, appttype, isvirtual, px_age, px_gender, clinic_hospitalname, clinic_ishospital, clinic_city, clinic_province, clinic_regionname, doctor_mainspecialty, doctor_age, island, modified_by, last_modified) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + (updateLastModifiedTimestamp ? "UNIX_TIMESTAMP()" : "?") + ")" +
+                    "ON DUPLICATE KEY UPDATE " +
+                    "id = VALUES(id), " +
+                    "status = VALUES(status), " + // good thing regex exists
+                    "timequeued = VALUES(timequeued), " +
+                    "queuedate = VALUES(queuedate), " +
+                    "starttime = VALUES(starttime), " +
+                    "endtime = VALUES(endtime), " +
+                    "appttype = VALUES(appttype), " +
+                    "isvirtual = VALUES(isvirtual), " +
+                    "px_age = VALUES(px_age), " +
+                    "px_gender = VALUES(px_gender), " +
+                    "clinic_hospitalname = VALUES(clinic_hospitalname), " +
+                    "clinic_ishospital = VALUES(clinic_ishospital), " +
+                    "clinic_city = VALUES(clinic_city), " +
+                    "clinic_province = VALUES(clinic_province), " +
+                    "clinic_regionname = VALUES(clinic_regionname), " +
+                    "doctor_mainspecialty = VALUES(doctor_mainspecialty), " +
+                    "doctor_age = VALUES(doctor_age), " +
+                    "island = VALUES(island), " +
+                    "modified_by = VALUES(modified_by), " +
+                    "last_modified = " + (updateLastModifiedTimestamp ? "UNIX_TIMESTAMP()" : "VALUES(last_modified)")
+                    );
+
+        upsertStatement.setInt(1, appointments.getId());
+        upsertStatement.setString(2, appointments.getStatus());
+        upsertStatement.setObject(3, appointments.getTimequeued());
+        upsertStatement.setObject(4, appointments.getQueuedate());
+        upsertStatement.setObject(5, appointments.getStarttime());
+        upsertStatement.setObject(6, appointments.getEndtime());
+        upsertStatement.setString(7, appointments.getAppttype());
+        upsertStatement.setString(8, appointments.getIsvirtual());
+        upsertStatement.setInt(9, appointments.getPx_age());
+        upsertStatement.setString(10, appointments.getPx_gender());
+        upsertStatement.setString(11, appointments.getClinic_hospitalname());
+        upsertStatement.setString(12, appointments.getClinic_ishospital());
+        upsertStatement.setString(13, appointments.getClinic_city());
+        upsertStatement.setString(14, appointments.getClinic_province());
+        upsertStatement.setString(15, appointments.getClinic_regionname());
+        upsertStatement.setString(16, appointments.getDoctor_mainspecialty());
+        upsertStatement.setInt(17, appointments.getDoctor_age());
+        upsertStatement.setString(18, appointments.getIsland());
+        upsertStatement.setString(19, appointments.getModified_by());
+
+        if(!updateLastModifiedTimestamp) {
+            upsertStatement.setObject(20, appointments.getLast_modified());
+        }
+
+        return upsertStatement;
     }
 }

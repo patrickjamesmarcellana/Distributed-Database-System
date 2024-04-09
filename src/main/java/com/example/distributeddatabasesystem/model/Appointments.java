@@ -34,6 +34,8 @@ public class Appointments {
     private int doctor_age;
 
     private String island;
+    private LocalDateTime last_modified;
+    private String modified_by;
 
     public Appointments() {
     }
@@ -182,4 +184,19 @@ public class Appointments {
         this.island = island;
     }
 
+    public LocalDateTime getLast_modified() {
+        return last_modified;
+    }
+
+    public void setLast_modified(LocalDateTime last_modified) {
+        this.last_modified = last_modified;
+    }
+
+    public String getModified_by() {
+        return modified_by;
+    }
+
+    public void setModified_by(String modified_by) {
+        this.modified_by = modified_by;
+    }
 }
