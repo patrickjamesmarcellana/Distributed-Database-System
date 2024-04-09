@@ -203,7 +203,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     @Override
     public Appointments read(Transaction data) throws SQLException, InterruptedException {
         // determine which node to use in getConnection
-        Connection connection = getConnection(data.getNode());
+        Connection connection = getConnection(data.getNode(), data.getId());
 
         // set transaction isolation level
         setTransactionIsolationLevel(connection, data.getIsolationLevel());
@@ -245,7 +245,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     @Override
     public Appointments update(Transaction data) throws SQLException, InterruptedException {
         // determine which node to use in getConnection
-        Connection connection = getConnection(data.getNode());
+        Connection connection = getConnection(data.getNode(), data.getId());
 
         // set transaction isolation level
         setTransactionIsolationLevel(connection, data.getIsolationLevel());
@@ -292,7 +292,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     @Override
     public void delete(Transaction data) throws SQLException, InterruptedException {
         // determine which node to use in getConnection
-        Connection connection = getConnection(data.getNode());
+        Connection connection = getConnection(data.getNode(), data.getId());
 
         // set transaction isolation level
         setTransactionIsolationLevel(connection, data.getIsolationLevel());
@@ -327,17 +327,115 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     }
 
     // nodePort = {20189, 20190, 20191}
-    public Connection getConnection(String nodePort) throws SQLException {
+    public Connection getConnection(String nodePort, int id) throws SQLException {
         // TODO: Handle Global Recovery here
         switch(nodePort) {
             case "20189" -> {
-                return node1JdbcTemplate.getDataSource().getConnection();
+                Connection connection = node1JdbcTemplate.getDataSource().getConnection();
+                try {
+                    // check first if master/chosen server is up
+                    // unhandled condition: if chosen server is a mismatch (doesn't contain id), assumption that entered id and node are always compatible
+                    PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
+                    findQuery.setInt(1, id);
+                    ResultSet queryResult = findQuery.executeQuery();
+                    queryResult.next();
+                    return connection;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // it means the initial connection failed -> switch to another connection
+
+                // check node slave 1 if id of island is here
+                try {
+                    connection = node2JdbcTemplate.getDataSource().getConnection();
+                    PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
+                    findQuery.setInt(1, id);
+                    ResultSet queryResult = findQuery.executeQuery();
+                    boolean isIslandHere = queryResult.next();
+                    if (isIslandHere) {
+                        return connection;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // (if the other two are down) or (if the master is down and slave 1 does not contain island), choose server 3
+                // unhandled condition when both servers are down: if chosen server is a mismatch (doesn't contain id), assumption that entered id and node are always compatible
+                connection = node3JdbcTemplate.getDataSource().getConnection();
+                return connection;
             }
             case "20190" -> {
-                return node2JdbcTemplate.getDataSource().getConnection();
+                Connection connection = node2JdbcTemplate.getDataSource().getConnection();
+                try {
+                    // check first if chosen server is up
+                    PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
+                    findQuery.setInt(1, id);
+                    ResultSet queryResult = findQuery.executeQuery();
+                    // if server is up, check if island is here
+                    boolean isIslandHere = queryResult.next();
+                    if (isIslandHere) {
+                        return connection;
+                    }
+                    return connection;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // switch to another connection if initial slave connection failed/does not contain island
+
+                // check master if it is up; assumes that master contains all data
+                try {
+                    connection = node1JdbcTemplate.getDataSource().getConnection();
+                    PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
+                    findQuery.setInt(1, id);
+                    ResultSet queryResult = findQuery.executeQuery();
+                    queryResult.next();
+                    return connection;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // (if the other two are down) or (if the master is down and slave 1 does not contain island), choose slave 2
+                // unhandled condition when both servers are down: if chosen server is a mismatch (doesn't contain id), assumption that entered id and node are always compatible
+                connection = node3JdbcTemplate.getDataSource().getConnection();
+                return connection;
             }
             default -> { // 20191
-                return node3JdbcTemplate.getDataSource().getConnection();
+                Connection connection = node3JdbcTemplate.getDataSource().getConnection();
+                try {
+                    // check first if chosen server is up
+                    PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
+                    findQuery.setInt(1, id);
+                    ResultSet queryResult = findQuery.executeQuery();
+                    // if server is up, check if island is here
+                    boolean isIslandHere = queryResult.next();
+                    if (isIslandHere) {
+                        return connection;
+                    }
+                    return connection;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // switch to another connection if initial slave connection failed/does not contain island
+
+                // check master if it is up; assumes that master contains all data
+                try {
+                    connection = node1JdbcTemplate.getDataSource().getConnection();
+                    PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
+                    findQuery.setInt(1, id);
+                    ResultSet queryResult = findQuery.executeQuery();
+                    queryResult.next();
+                    return connection;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // (if the other two are down) or (if the master is down and slave 2 does not contain island), choose slave 1
+                // unhandled condition when both servers are down: if chosen server is a mismatch (doesn't contain id), assumption that entered id and node are always compatible
+                connection = node2JdbcTemplate.getDataSource().getConnection();
+                return connection;
             }
         }
     }
