@@ -430,69 +430,40 @@ $("#submit-btn").click(async (e) => {
         isolationLevel: $("#isolation-level").val(),
         transaction: $("#transaction").val(),
         operation: $("#operation-type").val(),
+        id: $("#id").val(),
         commitOrRollback: $("#commit-or-rollback").val()
     }
 
     if (data.operation === "Read") {
         try {
-            const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&commitOrRollback=${data.commitOrRollback}`, {method: "GET"})
+            const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&id=${data.id}&commitOrRollback=${data.commitOrRollback}`, {method: "GET"})
             const appointment = await result.json()
             console.log(appointment)
-            const tableContainer = $("<div>").addClass("px-4");
-            const table = $("<table>").addClass("text-sm text-left rtl:text-right mt-1 overflow-x-auto overflow-y-auto h-0.5");
-            tableContainer.append(table);
-
-            const thead = $("<thead>").addClass("text-xs text-black uppercase rounded border-b dark:text-black");
-            const headerRow = $("<tr>");
-
-            const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Doctor Main Specialty", "Doctor Age"];
-
-            $.each(headerLabels, function(index, label) {
-                $("<th>").text(label).addClass("px-6 py-3").appendTo(headerRow);
-            });
-
-            headerRow.appendTo(thead);
-            thead.appendTo(table);
-
-            const tbody = $("<tbody>").attr("id", "appointments-list");
-
-            const row = $("<tr>").addClass("border-b hover:bg-gray-300");
-
-            const appointmentAttributes = ["id", "status", "timequeued", "queuedate", "starttime", "endtime", "appttype", "isvirtual", "px_age", "px_gender", "clinic_hospitalname", "clinic_ishospital", "clinic_city", "clinic_province", "clinic_regionname", "doctor_mainspecialty", "doctor_age"];
-
-            $.each(appointmentAttributes, function(index, attr) {
-                $("<td>").text(appointment[attr]).addClass("px-6 py-4").appendTo(row);
-            });
-            tbody.append(row);
-
-            table.append(tbody);
-
-            $("#data-display").empty().append(table);
-            $("#data-display").removeClass("hidden");
+            displayResult(appointment)
         } catch (err) {
             console.error(err)
-            const errorMessage = $("<div>")
-                .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
-                .attr("role", "alert")
-                .html("<span class='font-medium'>Error:</span> An error occurred while finding this appointment. Please try again.");
+            displayError("reading")
+        }
+    } else if (data.operation === "Update") {
+        // write (update) operation
 
-            $("#error-display").html(errorMessage);
-            $("#error-display").removeClass("hidden");
+        try {
+            const result = await fetch(`/appointments/update`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            })
+            const appointment = await result.json()
+            console.log(appointment)
+            displayResult(appointment)
+        } catch (err) {
+            console.error(err)
+            displayError("updating")
         }
     } else {
-        // write operation
-
-
-        //    const result = await fetch(`/appointments/transaction?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&id=${data.id}`, {
-        //         method: "POST",
-        ////         headers: {
-        ////             "Content-Type": "application/json",
-        ////         },
-        ////         body: JSON.stringify(data),
-        //     })
-        //    const queryResult = await result.json()
-        //
-        //    console.log(queryResult)
+        // write (delete) operation
     }
 
     clearFields()
@@ -502,6 +473,51 @@ function clearFields() {
     $("#node").val("")
     $("#isolation-level").val("")
     $("#transaction").val("")
-    $("#operation-type").val("")
+    $("#operation-type").val(""),
+    $("#id").val(""),
     $("#commit-or-rollback").val("")
+}
+
+function displayResult(appointment) {
+    const tableContainer = $("<div>").addClass("px-4");
+    const table = $("<table>").addClass("text-sm text-left rtl:text-right mt-1 overflow-x-auto overflow-y-auto h-0.5");
+    tableContainer.append(table);
+
+    const thead = $("<thead>").addClass("text-xs text-black uppercase rounded border-b dark:text-black");
+    const headerRow = $("<tr>");
+
+    const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Doctor Main Specialty", "Doctor Age"];
+
+    $.each(headerLabels, function(index, label) {
+        $("<th>").text(label).addClass("px-6 py-3").appendTo(headerRow);
+    });
+
+    headerRow.appendTo(thead);
+    thead.appendTo(table);
+
+    const tbody = $("<tbody>").attr("id", "appointments-list");
+
+    const row = $("<tr>").addClass("border-b hover:bg-gray-300");
+
+    const appointmentAttributes = ["id", "status", "timequeued", "queuedate", "starttime", "endtime", "appttype", "isvirtual", "px_age", "px_gender", "clinic_hospitalname", "clinic_ishospital", "clinic_city", "clinic_province", "clinic_regionname", "doctor_mainspecialty", "doctor_age"];
+
+    $.each(appointmentAttributes, function(index, attr) {
+        $("<td>").text(appointment[attr]).addClass("px-6 py-4").appendTo(row);
+    });
+    tbody.append(row);
+
+    table.append(tbody);
+
+    $("#data-display").empty().append(table);
+    $("#data-display").removeClass("hidden");
+}
+
+function displayError(operation) {
+    const errorMessage = $("<div>")
+        .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
+        .attr("role", "alert")
+        .html("<span class='font-medium'>Error:</span> An error occurred while " + operation + " this appointment. Please try again.");
+
+    $("#error-display").html(errorMessage);
+    $("#error-display").removeClass("hidden");
 }

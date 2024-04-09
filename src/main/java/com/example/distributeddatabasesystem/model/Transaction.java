@@ -5,8 +5,16 @@ public class Transaction {
     private String isolationLevel;
     private String transaction;
     private String operation;
+    private int id;
     private String commitOrRollback;
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
     public String getOperation() {
         return operation;
     }
@@ -46,11 +54,12 @@ public class Transaction {
         this.commitOrRollback = commitOrRollback;
     }
 
-    public Transaction(String node, String isolationLevel, String transaction, String operation, String commitOrRollback) {
+    public Transaction(String node, String isolationLevel, String transaction, String operation, int id, String commitOrRollback) {
         this.node = node;
         this.isolationLevel = isolationLevel;
         this.transaction = transaction;
         this.operation = operation;
+        this.id = id;
         this.commitOrRollback = commitOrRollback;
     }
 }

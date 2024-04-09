@@ -98,6 +98,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         // Read
         PreparedStatement query = connection.prepareStatement(data.getTransaction());
+        query.setInt(1, data.getId());
         ResultSet queryResult = query.executeQuery();
         queryResult.next();
 
@@ -109,6 +110,42 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                 connection.rollback();
             }
         }
+
+        // store result
+        Appointments appointment = extractResult(queryResult);
+        return appointment;
+    }
+
+    @Override
+    public Appointments update(Transaction data) throws SQLException {
+        // determine which node to use in getConnection
+        Connection connection = getConnection(data.getNode());
+
+        // set transaction isolation level
+        setTransactionIsolationLevel(connection, data.getIsolationLevel());
+
+        // start transaction
+        connection.setAutoCommit(false);
+
+        // Update
+        PreparedStatement query = connection.prepareStatement(data.getTransaction());
+        query.setInt(1, data.getId());
+        query.executeUpdate();
+
+        // Commit or Rollback
+        switch(data.getCommitOrRollback()) {
+            case "commit" -> {
+                connection.commit();
+            } default -> { // rollback
+                connection.rollback();
+            }
+        }
+
+        // retrieve updated row
+        PreparedStatement findQuery = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
+        findQuery.setInt(1, data.getId());
+        ResultSet queryResult = findQuery.executeQuery();
+        queryResult.next();
 
         // store result
         Appointments appointment = extractResult(queryResult);
