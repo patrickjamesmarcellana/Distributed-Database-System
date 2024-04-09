@@ -7,11 +7,7 @@ import jakarta.persistence.Id;
 
 import java.time.LocalDateTime;
 
-@Entity(name="appointments")
 public class Appointments {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String status;
     private LocalDateTime timequeued;

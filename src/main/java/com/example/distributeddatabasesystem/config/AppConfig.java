@@ -27,12 +27,6 @@ import java.util.Objects;
 
 @Configuration
 @EnableScheduling
-@EnableTransactionManagement
-@EnableJpaRepositories(
-        basePackageClasses = AppointmentsRepository.class,
-        entityManagerFactoryRef = "node1EntityManagerFactory",
-        transactionManagerRef = "node1TransactionManager"
-)
 @PropertySource(value = { "classpath:application.properties" })
 public class AppConfig
 {
@@ -88,56 +82,6 @@ public class AppConfig
         dataSource.setUsername("user");
         dataSource.setPassword("sS3pvALPxcWbTCEgXnzq9VYN");
         return dataSource;
-    }
-
-    @Bean
-    @Primary // hack
-    public LocalContainerEntityManagerFactoryBean node1EntityManagerFactory(
-            @Qualifier("node1DataSource") DataSource dataSource,
-            EntityManagerFactoryBuilder builder) {
-        return builder
-                .dataSource(dataSource)
-                .packages(Appointments.class)
-                .build();
-    }
-
-    @Bean
-    public LocalContainerEntityManagerFactoryBean node2EntityManagerFactory(
-            @Qualifier("node2DataSource") DataSource dataSource,
-            EntityManagerFactoryBuilder builder) {
-        return builder
-                .dataSource(dataSource)
-                .packages(Appointments.class)
-                .build();
-    }
-
-    @Bean
-    public LocalContainerEntityManagerFactoryBean node3EntityManagerFactory(
-            @Qualifier("node3DataSource") DataSource dataSource,
-            EntityManagerFactoryBuilder builder) {
-        return builder
-                .dataSource(dataSource)
-                .packages(Appointments.class)
-                .build();
-    }
-
-    @Bean
-    public PlatformTransactionManager node1TransactionManager(
-            @Qualifier("node1EntityManagerFactory") LocalContainerEntityManagerFactoryBean node1EntityManagerFactory) {
-        return new JpaTransactionManager(Objects.requireNonNull(node1EntityManagerFactory.getObject()));
-    }
-
-    @Bean
-    public PlatformTransactionManager node2TransactionManager(
-            @Qualifier("node2EntityManagerFactory") LocalContainerEntityManagerFactoryBean node2EntityManagerFactory) {
-        return new JpaTransactionManager(Objects.requireNonNull(node2EntityManagerFactory.getObject()));
-    }
-
-    @Bean
-    @Primary
-    public PlatformTransactionManager node3TransactionManager(
-            @Qualifier("node3EntityManagerFactory") LocalContainerEntityManagerFactoryBean node3EntityManagerFactory) {
-        return new JpaTransactionManager(Objects.requireNonNull(node3EntityManagerFactory.getObject()));
     }
 
 
