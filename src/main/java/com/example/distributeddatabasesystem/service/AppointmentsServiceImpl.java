@@ -104,6 +104,8 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     updateLastModified.setString(1, sourceConnection.getMetaData().getURL());
                     updateLastModified.setObject(2, serverMaxEventId);
                     updateLastModifiedOfSources.add(updateLastModified);
+
+                    sourceConnection.close();
                 } catch (SQLException | NullPointerException e) {
                     e.printStackTrace();
                 }
