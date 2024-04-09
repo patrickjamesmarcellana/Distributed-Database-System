@@ -93,4 +93,14 @@ public class AppointmentsController {
         }
     }
 
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> delete(@RequestBody Transaction transaction) {
+        try {
+            appointmentsService.delete(transaction);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

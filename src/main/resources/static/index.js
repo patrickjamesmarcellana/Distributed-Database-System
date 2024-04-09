@@ -440,6 +440,7 @@ $("#submit-btn").click(async (e) => {
             const appointment = await result.json()
             console.log(appointment)
             displayResult(appointment)
+            displaySuccess("read")
         } catch (err) {
             console.error(err)
             displayError("reading")
@@ -458,12 +459,33 @@ $("#submit-btn").click(async (e) => {
             const appointment = await result.json()
             console.log(appointment)
             displayResult(appointment)
+            displaySuccess("updated")
         } catch (err) {
             console.error(err)
             displayError("updating")
         }
-    } else {
+    } else if (data.operation === "Delete") {
         // write (delete) operation
+
+        try {
+            const result = await fetch(`/appointments/update`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            })
+            console.log(result)
+            if (result.status === 200) {
+                displaySuccess("deleted")
+            }
+        } catch (err) {
+            console.error(err)
+            displayError("deleting")
+        }
+    } else {
+        // should be impossible
+        console.log("Incorrect mapping of database operation in index.js")
     }
 
     clearFields()
@@ -519,5 +541,15 @@ function displayError(operation) {
         .html("<span class='font-medium'>Error:</span> An error occurred while " + operation + " this appointment. Please try again.");
 
     $("#error-display").html(errorMessage);
+    $("#error-display").removeClass("hidden");
+}
+
+function displaySuccess(operation) {
+    const displayMessage = $("<div>")
+        .addClass("p-4 text-sm text-green-800 rounded-lg bg-gray-300 dark:bg-green-400 dark:text-green-950")
+        .attr("role", "alert")
+        .html("<span class='font-medium'>Success:</span> Appointment has been successfully " + operation +".");
+
+    $("#error-display").html(displayMessage);
     $("#error-display").removeClass("hidden");
 }

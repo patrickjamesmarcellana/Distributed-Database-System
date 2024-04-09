@@ -152,6 +152,32 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         return appointment;
     }
 
+    @Override
+    public void delete(Transaction data) throws SQLException {
+        // determine which node to use in getConnection
+        Connection connection = getConnection(data.getNode());
+
+        // set transaction isolation level
+        setTransactionIsolationLevel(connection, data.getIsolationLevel());
+
+        // start transaction
+        connection.setAutoCommit(false);
+
+        // Delete
+        PreparedStatement query = connection.prepareStatement(data.getTransaction());
+        query.setInt(1, data.getId());
+        query.executeUpdate();
+
+        // Commit or Rollback
+        switch(data.getCommitOrRollback()) {
+            case "commit" -> {
+                connection.commit();
+            } default -> { // rollback
+                connection.rollback();
+            }
+        }
+    }
+
     // nodePort = {20189, 20190, 20191}
     public Connection getConnection(String nodePort) throws SQLException {
         // TODO: Handle Global Recovery here
