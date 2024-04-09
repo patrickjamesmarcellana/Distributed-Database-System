@@ -82,7 +82,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                         serverMaxEventId = -1;
                     }
 
-                    PreparedStatement otherNodeQuery = sourceConnection.prepareStatement("SELECT * FROM appointments WHERE id IN (SELECT DISTINCT id FROM appointments_log WHERE ? <= event_id AND event_id <= ?);"); // island not included (to detect island changes)
+                    PreparedStatement otherNodeQuery = sourceConnection.prepareStatement("SELECT * FROM appointments WHERE id IN (SELECT DISTINCT appointment_id FROM appointments_log WHERE ? < event_id AND event_id <= ?);"); // island not included (to detect island changes)
                     otherNodeQuery.setObject(1, lastReadEventId);
                     otherNodeQuery.setObject(2, serverMaxEventId);
 
