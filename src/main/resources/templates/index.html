@@ -40,20 +40,21 @@
         <select name="operation-type" id="operation-type" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
             <option value="" disabled selected hidden>Select Operation Type</option>
             <option value="Read">Read</option>
-            <option value="Write">Write</option>
+            <option value="Update">Write (Update)</option>
+            <option value="Delete">Write (Delete)</option>
         </select> <br>
 
         <div>Transaction:</div>
         <textarea id="transaction" name="transaction" placeholder="Enter transaction" rows="7" cols="49" class="border-2 border-black"></textarea><br>
 
-        <div class="input-id hidden">ID:</div>
-        <input id="id" name="id" class="input-id hidden text-xs w-96 font-bold mt-2 border-2 border-black p-0.5" required placeholder="Enter ID" type="number"><br>
+        <div class="">ID:</div>
+        <input id="id" name="id" class="input-id text-xs w-96 font-bold mt-2 border-2 border-black p-0.5" required placeholder="Enter ID" type="number"><br>
 
         <div>Commit?</div>
         <select name="commit-or-rollback" id="commit-or-rollback" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
             <option value="" disabled selected hidden>Select Commit or Not Commit</option>
-            <option value="Read">Commit</option>
-            <option value="Write">Not Commit</option>
+            <option value="commit">Commit</option>
+            <option value="rollback">Not Commit</option>
         </select> <br>
 
         <button type="submit" id="submit-btn" class="rounded-md px-4 py-2 black bg-green-400">Submit</button>

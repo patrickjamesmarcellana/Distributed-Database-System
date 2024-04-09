@@ -12,4 +12,6 @@ public interface AppointmentsService {
 //    public List<Appointments> getAllAppointments();
 //    public void delete(Integer id);
     public Appointments read(Transaction data) throws SQLException;
+    public Appointments update(Transaction data) throws SQLException;
+    public void delete (Transaction data) throws SQLException;
 }

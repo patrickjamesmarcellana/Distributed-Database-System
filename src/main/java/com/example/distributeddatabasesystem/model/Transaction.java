@@ -15,7 +15,6 @@ public class Transaction {
     public void setId(int id) {
         this.id = id;
     }
-
     public String getOperation() {
         return operation;
     }

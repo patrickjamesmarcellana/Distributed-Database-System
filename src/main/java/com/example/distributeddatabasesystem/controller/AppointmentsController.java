@@ -71,9 +71,36 @@ public class AppointmentsController {
 
     @GetMapping("/read")
     public ResponseEntity<Appointments> read(@RequestParam String node, @RequestParam String isolationLevel, @RequestParam String transaction, @RequestParam String operation, @RequestParam String id, @RequestParam String commitOrRollback) throws SQLException {
-        Transaction newTransaction = new Transaction(node, isolationLevel, transaction, operation, Integer.parseInt(id), commitOrRollback);
-        Appointments result = appointmentsService.read(newTransaction);
-        return new ResponseEntity<>(result, HttpStatus.OK);
+        try {
+            Transaction newTransaction = new Transaction(node, isolationLevel, transaction, operation, Integer.parseInt(id), commitOrRollback);
+            Appointments result = appointmentsService.read(newTransaction);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    @PatchMapping("/update")
+    public ResponseEntity<Appointments> update(@RequestBody Transaction transaction) {
+        try {
+            Appointments result = appointmentsService.update(transaction);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> delete(@RequestBody Transaction transaction) {
+        try {
+            appointmentsService.delete(transaction);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 }
