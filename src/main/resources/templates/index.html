@@ -30,10 +30,10 @@
         <div>Isolation Level:</div>
         <select name="isolation-level" id="isolation-level" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
             <option value="" disabled selected hidden>Select Isolation Level</option>
-            <option value="Read Uncommitted">Read Uncommitted</option>
-            <option value="Read Committed">Read Committed</option>
-            <option value="Repeatable Read">Repeatable Read</option>
-            <option value="Serializable Read">Serializable Read</option>
+            <option value="READ UNCOMMITTED">Read Uncommitted</option>
+            <option value="READ COMMITTED">Read Committed</option>
+            <option value="REPEATABLE READ">Repeatable Read</option>
+            <option value="SERIALIZABLE">Serializable</option>
         </select> <br>
 
         <div>Operation Type:</div>
@@ -44,14 +44,21 @@
         </select> <br>
 
         <div>Transaction:</div>
-        <textarea id="transaction" name="transaction" placeholder="Enter transaction" rows="10" cols="50" class="border-2 border-black"></textarea><br>
+        <textarea id="transaction" name="transaction" placeholder="Enter transaction" rows="7" cols="49" class="border-2 border-black"></textarea><br>
 
         <div class="input-id hidden">ID:</div>
         <input id="id" name="id" class="input-id hidden text-xs w-96 font-bold mt-2 border-2 border-black p-0.5" required placeholder="Enter ID" type="number"><br>
 
+        <div>Commit?</div>
+        <select name="commit-or-rollback" id="commit-or-rollback" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
+            <option value="" disabled selected hidden>Select Commit or Not Commit</option>
+            <option value="Read">Commit</option>
+            <option value="Write">Not Commit</option>
+        </select> <br>
+
         <button type="submit" id="submit-btn" class="rounded-md px-4 py-2 black bg-green-400">Submit</button>
     </div>
-    <div id="data-display" class="mb-[8vh] w-3/4 max-w-[1440px] overflow-x-scroll hidden mb-4 shadow-md sm:rounded-lg rounded-md border-2 border-black">
+    <div id="data-display" class="mb-[8vh] w-3/4 max-w-[1440px] overflow-x-scroll hidden mb-4 shadow-md rounded-md border-2 border-black">
         <!-- Display data here -->
 
     </div>

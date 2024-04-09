@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -69,11 +70,9 @@ public class AppointmentsController {
 //    }
 
     @GetMapping("/read")
-    public ResponseEntity<Appointments> read(@RequestParam String node, @RequestParam String isolationLevel, @RequestParam String transaction, @RequestParam String operation, @RequestParam String id)
-    {
-        Transaction newTransaction = new Transaction(node, isolationLevel, transaction, operation, Integer.parseInt(id));
+    public ResponseEntity<Appointments> read(@RequestParam String node, @RequestParam String isolationLevel, @RequestParam String transaction, @RequestParam String operation, @RequestParam String id, @RequestParam String commitOrRollback) throws SQLException {
+        Transaction newTransaction = new Transaction(node, isolationLevel, transaction, operation, Integer.parseInt(id), commitOrRollback);
         Appointments result = appointmentsService.read(newTransaction);
-        System.out.println(result.getClinic_regionname());
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 

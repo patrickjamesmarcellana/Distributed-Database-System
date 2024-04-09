@@ -9,14 +9,20 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 
 @EnableAutoConfiguration
-@Transactional(propagation= Propagation.REQUIRED, isolation= Isolation.READ_COMMITTED)
 @Service
 public class AppointmentsServiceImpl implements AppointmentsService {
 
@@ -79,36 +85,92 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 //        appointmentsRepository.deleteById(id);
 //    }
 
-
     @Override
-    public Appointments read(Transaction data) {
-        System.out.println(data.getNode());
-        if(data.getOperation().equals("Read")) {
-            // use jdbcTemplate.query() only
-            switch (data.getNode()) {
-                case "20189" -> {
-                    System.out.println("Reached the correct node");
-                    return node1JdbcTemplate.queryForObject(data.getTransaction(),
-                                            new Object[]{data.getId()},
-                                            new BeanPropertyRowMapper<>(Appointments.class));
-                }
-                case "20190" -> {
-                    return node2JdbcTemplate.queryForObject(data.getTransaction(),
-                                            new Object[]{data.getId()},
-                                            new BeanPropertyRowMapper<>(Appointments.class));
+    public Appointments read(Transaction data) throws SQLException {
+        // determine which node to use in getConnection
+        Connection connection = getConnection(data.getNode());
 
-                }
-                case "20191" -> {
-                    return node3JdbcTemplate.queryForObject(data.getTransaction(),
-                                            new Object[]{data.getId()},
-                                            new BeanPropertyRowMapper<>(Appointments.class));
-                }
+        // set transaction isolation level
+        setTransactionIsolationLevel(connection, data.getIsolationLevel());
+
+        // start transaction
+        connection.setAutoCommit(false);
+
+        // Read
+        PreparedStatement query = connection.prepareStatement(data.getTransaction());
+        query.setInt(1, data.getId());
+        System.out.println(query.toString());
+        ResultSet queryResult = query.executeQuery();
+        queryResult.next();
+
+        // Commit or Rollback
+        switch(data.getCommitOrRollback()) {
+            case "commit" -> {
+                connection.commit();
+            } default -> { // rollback
+                connection.rollback();
             }
-        } else {
-            // use jdbcTemplate.execute() then jdbcTemplate.query() to get results
-            return null;
         }
-        return null;
 
+        // store result
+        Appointments appointment = extractResult(queryResult);
+        return appointment;
+    }
+
+    // nodePort = {20189, 20190, 20191}
+    public Connection getConnection(String nodePort) throws SQLException {
+        // TODO: Handle Global Recovery here
+        switch(nodePort) {
+            case "20189" -> {
+                return node1JdbcTemplate.getDataSource().getConnection();
+            }
+            case "20190" -> {
+                return node2JdbcTemplate.getDataSource().getConnection();
+            }
+            default -> { // 20191
+                return node3JdbcTemplate.getDataSource().getConnection();
+            }
+        }
+    }
+
+    public void setTransactionIsolationLevel(Connection connection, String isolationLevel) throws SQLException {
+        switch (isolationLevel) {
+            case "READ UNCOMMITTED" -> {
+                connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+            }
+            case "READ COMMITTED" -> {
+                connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            }
+            case "REPEATABLE READ" -> {
+                connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+            }
+            default -> { // SERIALIZABLE
+                connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            }
+        }
+    }
+
+    public Appointments extractResult(ResultSet queryResult) throws SQLException {
+        Appointments appointment = new Appointments();
+        appointment.setId(queryResult.getInt("id"));
+        appointment.setStatus(queryResult.getString("status"));
+        appointment.setTimequeued(queryResult.getObject("timequeued", LocalDateTime.class));
+        appointment.setQueuedate(queryResult.getObject("queuedate", LocalDateTime.class));
+        appointment.setStarttime(queryResult.getObject("starttime", LocalDateTime.class));
+        appointment.setEndtime(queryResult.getObject("endtime", LocalDateTime.class));
+        appointment.setAppttype(queryResult.getString("appttype"));
+        appointment.setIsvirtual(queryResult.getString("isvirtual"));
+        appointment.setPx_age(queryResult.getInt("px_age"));
+        appointment.setPx_gender(queryResult.getString("px_gender"));
+        appointment.setClinic_hospitalname(queryResult.getString("clinic_hospitalname"));
+        appointment.setClinic_ishospital(queryResult.getString("clinic_ishospital"));
+        appointment.setClinic_city(queryResult.getString("clinic_city"));
+        appointment.setClinic_province(queryResult.getString("clinic_province"));
+        appointment.setClinic_regionname(queryResult.getString("clinic_regionname"));
+        appointment.setDoctor_mainspecialty(queryResult.getString("doctor_mainspecialty"));
+        appointment.setDoctor_age(queryResult.getInt("doctor_age"));
+        appointment.setIsland(queryResult.getString("island"));
+
+        return appointment;
     }
 }

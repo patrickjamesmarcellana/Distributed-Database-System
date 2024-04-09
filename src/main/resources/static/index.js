@@ -430,12 +430,13 @@ $("#submit-btn").click(async (e) => {
         isolationLevel: $("#isolation-level").val(),
         transaction: $("#transaction").val(),
         operation: $("#operation-type").val(),
-        id: $("#id").val()
+        id: $("#id").val(),
+        commitOrRollback: $("#commit-or-rollback").val()
     }
 
     if (data.operation === "Read") {
         try {
-            const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&id=${data.id}`, {method: "GET"})
+            const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&id=${data.id}&commitOrRollback=${data.commitOrRollback}`, {method: "GET"})
             const appointment = await result.json()
             console.log(appointment)
             const tableContainer = $("<div>").addClass("px-4");
