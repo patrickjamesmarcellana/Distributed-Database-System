@@ -153,6 +153,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         System.out.println("Starting replication task #1 - load data to slave");
         replicationSubtask(node2JdbcTemplate, new HashSet<>(List.of("Luzon")), node1JdbcTemplate, node3JdbcTemplate);
         replicationSubtask(node3JdbcTemplate, new HashSet<>(List.of("Visayas", "Mindanao")), node1JdbcTemplate, node2JdbcTemplate);
+        replicationSubtask(node1JdbcTemplate, new HashSet<>(List.of("Luzon", "Visayas", "Mindanao")), node2JdbcTemplate, node3JdbcTemplate);
     }
 
 //    @Override
