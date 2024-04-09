@@ -62,7 +62,6 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         }
 
         if(destinationConnection != null) {
-            final LocalDateTime DEFAULT_DATETIME = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
             ArrayList<PreparedStatement> updateLastModifiedOfSources = new ArrayList<>();
             ArrayList<JdbcTemplate> sources = new ArrayList<>(List.of(source1, source2));
             HashMap<Integer, Appointments> masterAppointments = new HashMap<>();
@@ -74,15 +73,17 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     PreparedStatement lastReadTimeStampQuery = destinationConnection.prepareStatement("SELECT last_modified FROM mco2.node_params WHERE url = ?;");
                     lastReadTimeStampQuery.setString(1, sourceConnection.getMetaData().getURL());
                     ResultSet lastReadTimestampQueryResult = lastReadTimeStampQuery.executeQuery();
+                    long lastReadEventId = lastReadTimestampQueryResult.next() ? lastReadTimestampQueryResult.getLong("last_modified") : -1;
+                    System.out.println("Latest data from " + sourceConnection.getMetaData().getURL() + " was from " + lastReadEventId);
 
-                    LocalDateTime lastReadTimestamp = lastReadTimestampQueryResult.next() ? lastReadTimestampQueryResult.getObject("last_modified", LocalDateTime.class) : DEFAULT_DATETIME;
-                    System.out.println("Latest data from " + sourceConnection.getMetaData().getURL() + " was from " + lastReadTimestamp);
+                    ResultSet serverMaxEventIdQuery = sourceConnection.prepareStatement("SELECT MAX(event_id) FROM appointments_log").executeQuery();
+                    long serverMaxEventId = serverMaxEventIdQuery.next() ? serverMaxEventIdQuery.getLong(1) : -1;
 
-                    PreparedStatement otherNodeQuery = sourceConnection.prepareStatement("SELECT * FROM appointments WHERE last_modified > ? AND last_modified < UTC_TIMESTAMP()"); // last_modified < UTC_TIMESTAMP() is to prevent incomplete data still being written, island not included (to detect island changes)
-                    otherNodeQuery.setObject(1, lastReadTimestamp);
+                    PreparedStatement otherNodeQuery = sourceConnection.prepareStatement("SELECT * FROM appointments WHERE id IN (SELECT DISTINCT id FROM appointments_log WHERE ? < event_id AND event_id <= ?);"); // island not included (to detect island changes)
+                    otherNodeQuery.setObject(1, lastReadEventId);
+                    otherNodeQuery.setObject(2, serverMaxEventId);
 
                     ResultSet otherNodeResults = otherNodeQuery.executeQuery();
-                    LocalDateTime lastModified = DEFAULT_DATETIME;
                     while(otherNodeResults.next()) {
                         Appointments appointment = extractResult(otherNodeResults);
                         Integer id = appointment.getId();
@@ -90,24 +91,19 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
                         if(!masterAppointments.containsKey(id)) {
                             masterAppointments.put(id, appointment);
-                            lastModified = appointment.getLast_modified().isAfter(lastModified) ? appointment.getLast_modified() : lastModified;
                         } else {
                             // prioritize later appointment
                             if(appointment.getLast_modified().isAfter(masterAppointments.get(id).getLast_modified())) {
                                 masterAppointments.put(id, appointment);
-                                lastModified = appointment.getLast_modified().isAfter(lastModified) ? appointment.getLast_modified() : lastModified;
                             }
                         }
                     }
 
                     // if there is new data, update the last modified timestamp of the destination node
-                    if(lastModified.isAfter(DEFAULT_DATETIME)) {
-                        PreparedStatement updateLastModified = destinationConnection.prepareStatement("INSERT INTO mco2.node_params (url, last_modified) VALUES(?, ?) ON DUPLICATE KEY UPDATE last_modified = VALUES(last_modified);");
-                        System.out.println(lastModified);
-                        updateLastModified.setString(1, sourceConnection.getMetaData().getURL());
-                        updateLastModified.setObject(2, lastModified);
-                        updateLastModifiedOfSources.add(updateLastModified);
-                    }
+                    PreparedStatement updateLastModified = destinationConnection.prepareStatement("INSERT INTO mco2.node_params (url, last_modified) VALUES(?, ?) ON DUPLICATE KEY UPDATE last_modified = VALUES(last_modified);");
+                    updateLastModified.setString(1, sourceConnection.getMetaData().getURL());
+                    updateLastModified.setObject(2, serverMaxEventId);
+                    updateLastModifiedOfSources.add(updateLastModified);
                 } catch (SQLException | NullPointerException e) {
                     e.printStackTrace();
                 }
