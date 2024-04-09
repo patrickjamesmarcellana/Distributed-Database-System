@@ -57,6 +57,12 @@
             <option value="rollback">Not Commit</option>
         </select> <br>
 
+        <select name="sleep-or-not" id="sleep-or-not" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
+            <option value="" disabled selected hidden>Sleep After Read/Write Operation?</option>
+            <option value="sleep">Sleep</option>
+            <option value="not-sleep">Don't Sleep</option>
+        </select> <br>
+
         <button type="submit" id="submit-btn" class="rounded-md px-4 py-2 black bg-green-400">Submit</button>
     </div>
     <div id="data-display" class="mb-[8vh] w-3/4 max-w-[1440px] overflow-x-scroll hidden mb-4 shadow-md rounded-md border-2 border-black">

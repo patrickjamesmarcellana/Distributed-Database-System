@@ -6,6 +6,7 @@ public class Transaction {
     private String transaction;
     private String operation;
     private int id;
+    private String sleepOrNot;
     private String commitOrRollback;
 
     public int getId() {
@@ -46,6 +47,14 @@ public class Transaction {
         this.transaction = transaction;
     }
 
+    public String getSleepOrNot() {
+        return sleepOrNot;
+    }
+
+    public void setSleepOrNot(String sleepOrNot) {
+        this.sleepOrNot = sleepOrNot;
+    }
+
     public String getCommitOrRollback() {
         return commitOrRollback;
     }
@@ -54,12 +63,13 @@ public class Transaction {
         this.commitOrRollback = commitOrRollback;
     }
 
-    public Transaction(String node, String isolationLevel, String transaction, String operation, int id, String commitOrRollback) {
+    public Transaction(String node, String isolationLevel, String transaction, String operation, int id, String sleepOrNot, String commitOrRollback) {
         this.node = node;
         this.isolationLevel = isolationLevel;
         this.transaction = transaction;
         this.operation = operation;
         this.id = id;
+        this.sleepOrNot = sleepOrNot;
         this.commitOrRollback = commitOrRollback;
     }
 }

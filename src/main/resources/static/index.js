@@ -431,12 +431,13 @@ $("#submit-btn").click(async (e) => {
         transaction: $("#transaction").val(),
         operation: $("#operation-type").val(),
         id: $("#id").val(),
+        sleepOrNot: $("#sleep-or-not").val(),
         commitOrRollback: $("#commit-or-rollback").val()
     }
 
     if (data.operation === "Read") {
         try {
-            const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&id=${data.id}&commitOrRollback=${data.commitOrRollback}`, {method: "GET"})
+            const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&id=${data.id}&sleepOrNot=${data.sleepOrNot}&commitOrRollback=${data.commitOrRollback}`, {method: "GET"})
             const appointment = await result.json()
             console.log(appointment)
             displayResult(appointment)
@@ -497,6 +498,7 @@ function clearFields() {
     $("#transaction").val("")
     $("#operation-type").val(""),
     $("#id").val(""),
+    $("#sleep-or-not").val("")
     $("#commit-or-rollback").val("")
 }
 

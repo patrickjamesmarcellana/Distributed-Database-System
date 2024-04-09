@@ -151,7 +151,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     public void replicationTask() {
         System.out.println("Starting replication task #1 - load data to slave");
         replicationSubtask(node2JdbcTemplate, new HashSet<>(List.of("Luzon")), node1JdbcTemplate, node3JdbcTemplate);
-        replicationSubtask(node3JdbcTemplate, new HashSet<>(List.of("Visayas/Mindanao")), node1JdbcTemplate, node2JdbcTemplate);
+        replicationSubtask(node3JdbcTemplate, new HashSet<>(List.of("Visayas", "Mindanao")), node1JdbcTemplate, node2JdbcTemplate);
     }
 
 //    @Override
@@ -199,7 +199,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 //    }
 
     @Override
-    public Appointments read(Transaction data) throws SQLException {
+    public Appointments read(Transaction data) throws SQLException, InterruptedException {
         // determine which node to use in getConnection
         Connection connection = getConnection(data.getNode());
 
@@ -214,6 +214,16 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         query.setInt(1, data.getId());
         ResultSet queryResult = query.executeQuery();
         queryResult.next();
+
+        // Sleep or Not Sleep
+        switch(data.getSleepOrNot()) {
+            case "sleep" -> {
+                // sleep in Java instead of SQL
+                Thread.sleep(5000);
+            } default -> { // not-sleep
+                // don't do anything
+            }
+        }
 
         // Commit or Rollback
         switch(data.getCommitOrRollback()) {
@@ -230,7 +240,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     }
 
     @Override
-    public Appointments update(Transaction data) throws SQLException {
+    public Appointments update(Transaction data) throws SQLException, InterruptedException {
         // determine which node to use in getConnection
         Connection connection = getConnection(data.getNode());
 
@@ -244,6 +254,16 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         PreparedStatement query = connection.prepareStatement(data.getTransaction());
         query.setInt(1, data.getId());
         query.executeUpdate();
+
+        // Sleep or Not Sleep
+        switch(data.getSleepOrNot()) {
+            case "sleep" -> {
+                // sleep in Java instead of SQL
+                Thread.sleep(5000);
+            } default -> { // not-sleep
+                // don't do anything
+            }
+        }
 
         // Commit or Rollback
         switch(data.getCommitOrRollback()) {
@@ -266,7 +286,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     }
 
     @Override
-    public void delete(Transaction data) throws SQLException {
+    public void delete(Transaction data) throws SQLException, InterruptedException {
         // determine which node to use in getConnection
         Connection connection = getConnection(data.getNode());
 
@@ -280,6 +300,16 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         PreparedStatement query = connection.prepareStatement(data.getTransaction());
         query.setInt(1, data.getId());
         query.executeUpdate();
+
+        // Sleep or Not Sleep
+        switch(data.getSleepOrNot()) {
+            case "sleep" -> {
+                // sleep in Java instead of SQL
+                Thread.sleep(5000);
+            } default -> { // not-sleep
+                // don't do anything
+            }
+        }
 
         // Commit or Rollback
         switch(data.getCommitOrRollback()) {
