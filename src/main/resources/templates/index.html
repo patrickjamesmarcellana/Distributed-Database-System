@@ -20,15 +20,15 @@
         </div>
 
         <div>Node/Server:</div>
-        <select name="node" id="node" required class="text-md w-96 font-bold mt-2 border-2 border-black p-1">
+        <select name="node" id="node" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
             <option value="" disabled selected hidden>Select Node/Server</option>
-            <option value="jdbc:mysql://ccscloud.dlsu.edu.ph:20189/mco2">Central Server</option>
-            <option value="jdbc:mysql://ccscloud.dlsu.edu.ph:20190/mco2">Slave Node 1 (Luzon)</option>
-            <option value="jdbc:mysql://ccscloud.dlsu.edu.ph:20191/mco2">Slave Node 2 (Visayas/Mindanao)</option>
+            <option value="20189">Central Server</option>
+            <option value="20190">Slave Node 1 (Luzon)</option>
+            <option value="20191">Slave Node 2 (Visayas/Mindanao)</option>
         </select> <br>
 
         <div>Isolation Level:</div>
-        <select name="isolation-level" id="isolation-level" required class="text-md w-96 font-bold mt-2 border-2 border-black p-1">
+        <select name="isolation-level" id="isolation-level" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
             <option value="" disabled selected hidden>Select Isolation Level</option>
             <option value="Read Uncommitted">Read Uncommitted</option>
             <option value="Read Committed">Read Committed</option>
@@ -36,10 +36,20 @@
             <option value="Serializable Read">Serializable Read</option>
         </select> <br>
 
+        <div>Operation Type:</div>
+        <select name="operation-type" id="operation-type" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
+            <option value="" disabled selected hidden>Select Operation Type</option>
+            <option value="Read">Read</option>
+            <option value="Write">Write</option>
+        </select> <br>
+
         <div>Transaction:</div>
         <textarea id="transaction" name="transaction" placeholder="Enter transaction" rows="10" cols="50" class="border-2 border-black"></textarea><br>
 
-        <button type="submit" id="submit-btn" class="rounded-md px-4 py-2 black bg-green-500">Submit</button>
+        <div class="input-id hidden">ID:</div>
+        <input id="id" name="id" class="input-id hidden text-xs w-96 font-bold mt-2 border-2 border-black p-0.5" required placeholder="Enter ID" type="number"><br>
+
+        <button type="submit" id="submit-btn" class="rounded-md px-4 py-2 black bg-green-400">Submit</button>
     </div>
     <div id="data-display" class="mb-[8vh] w-3/4 max-w-[1440px] overflow-x-scroll hidden mb-4 shadow-md sm:rounded-lg rounded-md border-2 border-black">
         <!-- Display data here -->
