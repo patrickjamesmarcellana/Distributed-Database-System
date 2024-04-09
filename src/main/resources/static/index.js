@@ -430,13 +430,12 @@ $("#submit-btn").click(async (e) => {
         isolationLevel: $("#isolation-level").val(),
         transaction: $("#transaction").val(),
         operation: $("#operation-type").val(),
-        id: $("#id").val(),
         commitOrRollback: $("#commit-or-rollback").val()
     }
 
     if (data.operation === "Read") {
         try {
-            const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&id=${data.id}&commitOrRollback=${data.commitOrRollback}`, {method: "GET"})
+            const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&commitOrRollback=${data.commitOrRollback}`, {method: "GET"})
             const appointment = await result.json()
             console.log(appointment)
             const tableContainer = $("<div>").addClass("px-4");
@@ -494,15 +493,15 @@ $("#submit-btn").click(async (e) => {
         //    const queryResult = await result.json()
         //
         //    console.log(queryResult)
-
     }
 
-
+    clearFields()
 })
 
-$("#operation-type").change(() => {
-    switch ($("#operation-type").val()) {
-        case "Read": $(".input-id").removeClass("hidden"); break;
-        case "Write": $(".input-id").addClass("hidden"); break;
-    }
-})
+function clearFields() {
+    $("#node").val("")
+    $("#isolation-level").val("")
+    $("#transaction").val("")
+    $("#operation-type").val("")
+    $("#commit-or-rollback").val("")
+}

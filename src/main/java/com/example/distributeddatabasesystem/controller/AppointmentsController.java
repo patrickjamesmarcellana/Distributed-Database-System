@@ -70,8 +70,8 @@ public class AppointmentsController {
 //    }
 
     @GetMapping("/read")
-    public ResponseEntity<Appointments> read(@RequestParam String node, @RequestParam String isolationLevel, @RequestParam String transaction, @RequestParam String operation, @RequestParam String id, @RequestParam String commitOrRollback) throws SQLException {
-        Transaction newTransaction = new Transaction(node, isolationLevel, transaction, operation, Integer.parseInt(id), commitOrRollback);
+    public ResponseEntity<Appointments> read(@RequestParam String node, @RequestParam String isolationLevel, @RequestParam String transaction, @RequestParam String operation, @RequestParam String commitOrRollback) throws SQLException {
+        Transaction newTransaction = new Transaction(node, isolationLevel, transaction, operation, commitOrRollback);
         Appointments result = appointmentsService.read(newTransaction);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }

@@ -98,8 +98,6 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         // Read
         PreparedStatement query = connection.prepareStatement(data.getTransaction());
-        query.setInt(1, data.getId());
-        System.out.println(query.toString());
         ResultSet queryResult = query.executeQuery();
         queryResult.next();
 
