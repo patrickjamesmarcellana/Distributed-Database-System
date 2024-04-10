@@ -329,6 +329,35 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         connection.close();
     }
 
+    public List<Appointments> findAllAppointments(String node, String transaction, String operation) throws SQLException {
+        // special selection of connection -> no need for island, just selected server/node
+        Connection connection;
+        switch(node) {
+            case "20189" -> {
+                connection = node1JdbcTemplate.getDataSource().getConnection();
+            }
+            case "20190" -> {
+                connection = node2JdbcTemplate.getDataSource().getConnection();
+            }
+            default -> { //20191
+                connection = node3JdbcTemplate.getDataSource().getConnection();
+            }
+        }
+
+        // find all appointments
+        PreparedStatement query = connection.prepareStatement(transaction);
+        ResultSet queryResult = query.executeQuery();
+        List<Appointments> appointments = new ArrayList<>();
+        while (queryResult.next()) {
+            // store result
+            Appointments appointment = extractResult(queryResult);
+            appointments.add(appointment);
+        }
+
+        connection.close();
+        return appointments;
+    }
+
     // nodePort = {20189, 20190, 20191}
     public Connection getConnection(String nodePort, int id) throws SQLException {
         // TODO: Handle Global Recovery here

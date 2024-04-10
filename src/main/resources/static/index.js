@@ -440,7 +440,8 @@ $("#submit-btn").click(async (e) => {
             const result = await fetch(`/appointments/read?node=${data.node}&isolationLevel=${data.isolationLevel}&transaction=${data.transaction}&operation=${data.operation}&id=${data.id}&sleepOrNot=${data.sleepOrNot}&commitOrRollback=${data.commitOrRollback}`, {method: "GET"})
             const appointment = await result.json()
             console.log(appointment)
-            displayResult(appointment)
+            const appointments = [appointment]
+            displayResult(appointments)
             displaySuccess("read")
         } catch (err) {
             console.error(err)
@@ -487,19 +488,18 @@ $("#submit-btn").click(async (e) => {
     } else if(data.operation === "Find All") {
         // find all operation
         try {
-            const response = await fetch(`/appointments/read?node=${data.node}&transaction=${data.transaction}&operation=${data.operation}`, {method: "GET"})
+            const response = await fetch(`/appointments/findAll?node=${data.node}&transaction=${data.transaction}&operation=${data.operation}`, {method: "GET"})
             if (!response.ok) {
-                throw new Error("Error fetching data");
+                throw new Error("Error fetching data")
             }
-            const result = response.json();
-            console.log(response);
-
+            const result = await response.json()
+            console.log(result)
+            displayResult(result)
+            displaySuccess("found")
         } catch (err) {
             console.error(err)
             displayError("finding all appointments")
         }
-
-
     } else {
         // should be impossible
         console.log("Incorrect mapping of database operation in index.js")
@@ -518,43 +518,44 @@ function clearFields() {
     $("#commit-or-rollback").val("")
 }
 
-function displayResult(appointment) {
-    const tableContainer = $("<div>").addClass("px-4");
-    const table = $("<table>").addClass("text-sm text-left rtl:text-right mt-1 overflow-x-auto overflow-y-auto h-0.5");
-    tableContainer.append(table);
+function displayResult(appointments) {
+     const tableContainer = $("<div>").addClass("px-4");
+     const table = $("<table>").addClass("text-sm text-left rtl:text-right mt-1");
+     tableContainer.append(table);
 
-    const thead = $("<thead>").addClass("text-xs text-black uppercase rounded border-b dark:text-black");
-    const headerRow = $("<tr>");
+     const thead = $("<thead>").addClass("text-xs text-black uppercase rounded border-b dark:text-black");
+     const headerRow = $("<tr>");
 
-    const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Island", "Doctor Main Specialty", "Doctor Age"];
+     const headerLabels = ["Appointment ID", "Status", "Time Queued", "Queue Date", "Start Time", "End Time", "Appointment Type", "Virtual", "Patient Age", "Patient Gender", "Clinic/Hospital Name", "Clinic is Hospital", "Clinic City", "Clinic Province", "Clinic Region Name", "Island", "Doctor Main Specialty", "Doctor Age"];
+     $.each(headerLabels, function(index, label) {
+         $("<th>").text(label).addClass("px-6 py-3").appendTo(headerRow);
+     });
 
-    $.each(headerLabels, function(index, label) {
-        $("<th>").text(label).addClass("px-6 py-3").appendTo(headerRow);
-    });
+     headerRow.appendTo(thead);
+     thead.appendTo(table);
 
-    headerRow.appendTo(thead);
-    thead.appendTo(table);
+     const tbody = $("<tbody>").attr("id", "appointments-list");
+     $.each(appointments, function(index, appointment) {
+         const row = $("<tr>").addClass("border-b hover:bg-gray-300");
 
-    const tbody = $("<tbody>").attr("id", "appointments-list");
+         const appointmentAttributes = ["id", "status", "timequeued", "queuedate", "starttime", "endtime", "appttype", "isvirtual", "px_age", "px_gender", "clinic_hospitalname", "clinic_ishospital", "clinic_city", "clinic_province", "clinic_regionname", "island", "doctor_mainspecialty", "doctor_age"];
 
-    const row = $("<tr>").addClass("border-b hover:bg-gray-300");
+         $.each(appointmentAttributes, function(index, attr) {
+             $("<td>").text(appointment[attr]).addClass("px-6 py-4").appendTo(row);
+         });
 
-    const appointmentAttributes = ["id", "status", "timequeued", "queuedate", "starttime", "endtime", "appttype", "isvirtual", "px_age", "px_gender", "clinic_hospitalname", "clinic_ishospital", "clinic_city", "clinic_province", "clinic_regionname", "island", "doctor_mainspecialty", "doctor_age"];
+         tbody.append(row);
+     });
 
-    $.each(appointmentAttributes, function(index, attr) {
-        $("<td>").text(appointment[attr]).addClass("px-6 py-4").appendTo(row);
-    });
-    tbody.append(row);
+     table.append(tbody);
 
-    table.append(tbody);
-
-    $("#data-display").empty().append(table);
-    $("#data-display").removeClass("hidden");
+     $("#data-display").empty().append(table);
+     $("#data-display").removeClass("hidden");
 }
 
 function displayError(operation) {
     const errorMessage = $("<div>")
-        .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950")
+        .addClass("p-4 text-sm text-red-800 rounded-lg bg-gray-400 dark:bg-red-400 dark:text-red-950 mb-6")
         .attr("role", "alert")
         .html("<span class='font-medium'>Error:</span> An error occurred while " + operation + ". Please try again.");
 
@@ -564,7 +565,7 @@ function displayError(operation) {
 
 function displaySuccess(operation) {
     const displayMessage = $("<div>")
-        .addClass("p-4 text-sm text-green-800 rounded-lg bg-gray-300 dark:bg-green-400 dark:text-green-950")
+        .addClass("p-4 text-sm text-green-800 rounded-lg bg-gray-300 dark:bg-green-400 dark:text-green-950 mb-6")
         .attr("role", "alert")
         .html("<span class='font-medium'>Success:</span> Appointment has been successfully " + operation +".");
 

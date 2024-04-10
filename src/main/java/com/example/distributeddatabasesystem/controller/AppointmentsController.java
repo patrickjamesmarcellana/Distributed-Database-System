@@ -103,4 +103,14 @@ public class AppointmentsController {
         }
     }
 
+    @GetMapping("/findAll")
+    public ResponseEntity<List<Appointments>> findAll(@RequestParam String node, @RequestParam String transaction, @RequestParam String operation) {
+        try {
+            List<Appointments> appointments = appointmentsService.findAllAppointments(node, transaction, operation);
+            return new ResponseEntity<>(appointments, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
 }
