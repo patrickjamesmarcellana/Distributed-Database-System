@@ -215,20 +215,37 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         // Sleep or Not Sleep
         switch(data.getSleepOrNot()) {
-            case "sleep" -> {
+            case "sleep-before" -> {
                 // sleep in Java instead of SQL
                 Thread.sleep(5000);
-            } default -> { // not-sleep
-                // don't do anything
+                // Commit or Rollback
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();
+                    } default -> { // rollback
+                        connection.rollback();
+                    }
+                }
             }
-        }
-
-        // Commit or Rollback
-        switch(data.getCommitOrRollback()) {
-            case "commit" -> {
-                connection.commit();
-            } default -> { // rollback
-                connection.rollback();
+            case "sleep-after" -> {
+                // Commit or Rollback
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();
+                    } default -> { // rollback
+                        connection.rollback();
+                    }
+                }
+                Thread.sleep(5000);
+            }
+            default -> { // not-sleep
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();
+                    } default -> { // rollback
+                        connection.rollback();
+                    }
+                }
             }
         }
 
@@ -256,24 +273,58 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         // Sleep or Not Sleep
         switch(data.getSleepOrNot()) {
-            case "sleep" -> {
+            case "sleep-before" -> {
                 // sleep in Java instead of SQL
                 Thread.sleep(5000);
-            } default -> { // not-sleep
-                // don't do anything
-            }
-        }
+                // Commit or Rollback
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();    // commit changes to appointments table of selected node
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId());
 
-        // Commit or Rollback
-        switch(data.getCommitOrRollback()) {
-            case "commit" -> {
-                // Update
-                connection.commit();
-                PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
-                logQuery.setInt(1, data.getId());
-                logQuery.executeUpdate();
-            } default -> { // rollback
-                connection.rollback();
+                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
+                        logQuery.setInt(1, data.getId());
+                        logQuery.executeUpdate();
+                        connection.commit();   // commit changes to appointment_logs table
+                    } default -> { // rollback
+                        connection.rollback();
+                    }
+                }
+            }
+            case "sleep-after" -> {
+                // Commit or Rollback
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();    // commit changes to appointments table of selected node
+                        Thread.sleep(8000);
+
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId());
+
+                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
+                        logQuery.setInt(1, data.getId());
+                        logQuery.executeUpdate();
+                        connection.commit();    // commit changes to appointment_logs table
+                    } default -> { // rollback
+                        connection.rollback();
+                        Thread.sleep(5000);
+                    }
+                }
+
+            }
+            default -> { // not-sleep
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();    // commit changes to appointments table of selected node
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId());
+
+                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
+                        logQuery.setInt(1, data.getId());
+                        logQuery.executeUpdate();
+                        connection.commit();   // commit changes to appointment_logs table
+                    } default -> { // rollback
+                        connection.rollback();
+                    }
+                }
             }
         }
 
@@ -487,6 +538,33 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             default -> { // SERIALIZABLE
                 connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             }
+        }
+    }
+
+    public void tryUpdatingSlaveNodes(String transaction, int id) {
+        // try to update slave nodes directly for replication
+        try {
+            Connection slave1Connection = node2JdbcTemplate.getDataSource().getConnection();
+            // Update
+            PreparedStatement slave1Query = slave1Connection.prepareStatement(transaction);
+            slave1Query.setInt(1, id);
+            slave1Query.executeUpdate();
+            slave1Connection.commit();
+            slave1Connection.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            Connection slave2Connection = node3JdbcTemplate.getDataSource().getConnection();
+            // Update
+            PreparedStatement slave2Query = slave2Connection.prepareStatement(transaction);
+            slave2Query.setInt(1, id);
+            slave2Query.executeUpdate();
+            slave2Connection.commit();
+            slave2Connection.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
