@@ -102,7 +102,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     // we will only delete rows that have:
                     //   1. that have an is_delete entry in the log, indicating that a delete operation was performed and:
                     //   2. does not contain any succeeding operations in the log that causes it to rise from the dead (e.g. create)
-                    PreparedStatement deletedQuery = sourceConnection.prepareStatement("SELECT DISTINCT appointment_id FROM appointments_log a WHERE ? < a.event_id AND a.event_id <= ? AND a.is_delete <=> 1 AND a.event_id NOT IN (SELECT DISTINCT appointment_id FROM appointments_log a_next WHERE a.event_id < a_next.event_id AND a_next.event_id <= ? AND a.is_delete <=> 1);");
+                    PreparedStatement deletedQuery = sourceConnection.prepareStatement("SELECT DISTINCT appointment_id FROM appointments_log a WHERE ? < a.event_id AND a.event_id <= ? AND a.is_delete <=> 1 AND a.event_id NOT IN (SELECT DISTINCT appointment_id FROM appointments_log a_next WHERE a.event_id < a_next.event_id AND a_next.event_id <= ? AND NOT(a.is_delete <=> 1));");
                     deletedQuery.setObject(1, lastReadEventId);
                     deletedQuery.setObject(2, serverMaxEventId);
                     deletedQuery.setObject(3, serverMaxEventId);
