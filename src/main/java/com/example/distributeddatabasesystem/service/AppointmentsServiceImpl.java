@@ -173,7 +173,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     }
 
     private void ensureConsistency() {
-         replicationTask();
+          replicationTask();
     }
 
 //    @Override
@@ -382,25 +382,61 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         // Sleep or Not Sleep
         switch(data.getSleepOrNot()) {
-            case "sleep" -> {
+            case "sleep-before" -> {
                 // sleep in Java instead of SQL
                 Thread.sleep(5000);
-            } default -> { // not-sleep
-                // don't do anything
+                // Commit or Rollback
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();    // commit changes to appointments table of selected node
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
+
+                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
+                        logQuery.setInt(1, data.getId());
+                        logQuery.executeUpdate();
+                        connection.commit();   // commit changes to appointment_logs table
+                    } default -> { // rollback
+                        connection.rollback();
+                    }
+                }
+            }
+            case "sleep-after" -> {
+                // Commit or Rollback
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();    // commit changes to appointments table of selected node
+                        Thread.sleep(8000);
+
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
+
+                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
+                        logQuery.setInt(1, data.getId());
+                        logQuery.executeUpdate();
+                        connection.commit();    // commit changes to appointment_logs table
+                    } default -> { // rollback
+                        connection.rollback();
+                        Thread.sleep(5000);
+                    }
+                }
+
+            }
+            default -> { // not-sleep
+                switch(data.getCommitOrRollback()) {
+                    case "commit" -> {
+                        connection.commit();    // commit changes to appointments table of selected node
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
+
+                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
+                        logQuery.setInt(1, data.getId());
+                        logQuery.executeUpdate();
+                        connection.commit();   // commit changes to appointment_logs table
+                    } default -> { // rollback
+                        connection.rollback();
+                    }
+                }
             }
         }
 
-        // Commit or Rollback
-        switch(data.getCommitOrRollback()) {
-            case "commit" -> {
-                PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
-                logQuery.setInt(1, data.getId());
-                logQuery.executeUpdate();
-                connection.commit();
-            } default -> { // rollback
-                connection.rollback();
-            }
-        }
         connection.close();
     }
 

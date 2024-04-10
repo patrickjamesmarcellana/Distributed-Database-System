@@ -471,7 +471,7 @@ $("#submit-btn").click(async (e) => {
         // write (delete) operation
 
         try {
-            const result = await fetch(`/appointments/update`, {
+            const result = await fetch(`/appointments/delete`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
