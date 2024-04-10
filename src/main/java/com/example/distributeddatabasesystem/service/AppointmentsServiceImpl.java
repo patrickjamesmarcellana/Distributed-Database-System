@@ -164,7 +164,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         }
     }
 
-     @Scheduled(fixedDelay=60000)
+     @Scheduled(fixedDelay=5000)
     public synchronized void replicationTask() {
         System.out.println("Starting replication task #1 - load data to slave");
         replicationSubtask(node2JdbcTemplate, new HashSet<>(List.of("Luzon")), node1JdbcTemplate, node3JdbcTemplate);
