@@ -144,12 +144,16 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
     }
 
-    @Scheduled(fixedDelay=10000)
+    @Scheduled(fixedDelay=60000)
     public void replicationTask() {
         System.out.println("Starting replication task #1 - load data to slave");
         replicationSubtask(node2JdbcTemplate, new HashSet<>(List.of("Luzon")), node1JdbcTemplate, node3JdbcTemplate);
         replicationSubtask(node3JdbcTemplate, new HashSet<>(List.of("Visayas", "Mindanao")), node1JdbcTemplate, node2JdbcTemplate);
         replicationSubtask(node1JdbcTemplate, new HashSet<>(List.of("Luzon", "Visayas", "Mindanao")), node2JdbcTemplate, node3JdbcTemplate);
+    }
+
+    private void ensureConsistency() {
+        replicationTask();
     }
 
 //    @Override
@@ -412,7 +416,9 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
     // nodePort = {20189, 20190, 20191}
     public Connection getConnection(String nodePort, int id) throws SQLException {
-        // TODO: Handle Global Recovery here
+        // ensure consistency of all nodes
+        ensureConsistency();
+
         switch(nodePort) {
             case "20189" -> {
 
