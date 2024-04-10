@@ -144,7 +144,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
     }
 
-    @Scheduled(fixedDelay=5000)
+    @Scheduled(fixedDelay=10000)
     public void replicationTask() {
         System.out.println("Starting replication task #1 - load data to slave");
         replicationSubtask(node2JdbcTemplate, new HashSet<>(List.of("Luzon")), node1JdbcTemplate, node3JdbcTemplate);
@@ -267,8 +267,8 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // Commit or Rollback
         switch(data.getCommitOrRollback()) {
             case "commit" -> {
-                connection.commit();
                 // Update
+                connection.commit();
                 PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
                 logQuery.setInt(1, data.getId());
                 logQuery.executeUpdate();
@@ -318,10 +318,10 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // Commit or Rollback
         switch(data.getCommitOrRollback()) {
             case "commit" -> {
-                connection.commit();
                 PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
                 logQuery.setInt(1, data.getId());
                 logQuery.executeUpdate();
+                connection.commit();
             } default -> { // rollback
                 connection.rollback();
             }
@@ -334,10 +334,11 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // TODO: Handle Global Recovery here
         switch(nodePort) {
             case "20189" -> {
-                Connection connection = node1JdbcTemplate.getDataSource().getConnection();
+
                 try {
                     // check first if master/chosen server is up
                     // unhandled condition: if chosen server is a mismatch (doesn't contain id), assumption that entered id and node are always compatible
+                    Connection connection = node1JdbcTemplate.getDataSource().getConnection();
                     PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
                     findQuery.setInt(1, id);
                     ResultSet queryResult = findQuery.executeQuery();
@@ -351,7 +352,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
                 // check node slave 1 if id of island is here
                 try {
-                    connection = node2JdbcTemplate.getDataSource().getConnection();
+                    Connection connection = node2JdbcTemplate.getDataSource().getConnection();
                     PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
                     findQuery.setInt(1, id);
                     ResultSet queryResult = findQuery.executeQuery();
@@ -365,13 +366,14 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
                 // (if the other two are down) or (if the master is down and slave 1 does not contain island), choose server 3
                 // unhandled condition when both servers are down: if chosen server is a mismatch (doesn't contain id), assumption that entered id and node are always compatible
-                connection = node3JdbcTemplate.getDataSource().getConnection();
+                Connection connection = node3JdbcTemplate.getDataSource().getConnection();
                 return connection;
             }
             case "20190" -> {
-                Connection connection = node2JdbcTemplate.getDataSource().getConnection();
+
                 try {
                     // check first if chosen server is up
+                    Connection connection = node2JdbcTemplate.getDataSource().getConnection();
                     PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
                     findQuery.setInt(1, id);
                     ResultSet queryResult = findQuery.executeQuery();
@@ -388,7 +390,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
                 // check master if it is up; assumes that master contains all data
                 try {
-                    connection = node1JdbcTemplate.getDataSource().getConnection();
+                    Connection connection = node1JdbcTemplate.getDataSource().getConnection();
                     PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
                     findQuery.setInt(1, id);
                     ResultSet queryResult = findQuery.executeQuery();
@@ -400,13 +402,14 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
                 // (if the other two are down) or (if the master is down and slave 1 does not contain island), choose slave 2
                 // unhandled condition when both servers are down: if chosen server is a mismatch (doesn't contain id), assumption that entered id and node are always compatible
-                connection = node3JdbcTemplate.getDataSource().getConnection();
+                Connection connection = node3JdbcTemplate.getDataSource().getConnection();
                 return connection;
             }
             default -> { // 20191
-                Connection connection = node3JdbcTemplate.getDataSource().getConnection();
+
                 try {
                     // check first if chosen server is up
+                    Connection connection = node3JdbcTemplate.getDataSource().getConnection();
                     PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
                     findQuery.setInt(1, id);
                     ResultSet queryResult = findQuery.executeQuery();
@@ -423,7 +426,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
                 // check master if it is up; assumes that master contains all data
                 try {
-                    connection = node1JdbcTemplate.getDataSource().getConnection();
+                    Connection connection = node1JdbcTemplate.getDataSource().getConnection();
                     PreparedStatement findQuery = connection.prepareStatement("SELECT island FROM appointments WHERE id = ?;");
                     findQuery.setInt(1, id);
                     ResultSet queryResult = findQuery.executeQuery();
@@ -435,7 +438,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
                 // (if the other two are down) or (if the master is down and slave 2 does not contain island), choose slave 1
                 // unhandled condition when both servers are down: if chosen server is a mismatch (doesn't contain id), assumption that entered id and node are always compatible
-                connection = node2JdbcTemplate.getDataSource().getConnection();
+                Connection connection = node2JdbcTemplate.getDataSource().getConnection();
                 return connection;
             }
         }
