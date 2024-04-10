@@ -284,214 +284,131 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // determine which node to use in getConnection
         Connection connection = getConnection(data.getNode(), data.getId());
 
+        Connection node2Connection = null;
+        Connection node3Connection = null;
+
+        if(connection.getMetaData().getURL().contains("20189")) { // hack to check if using the master node
+            try {
+                node2Connection = node2JdbcTemplate.getDataSource().getConnection();
+                node2Connection.setAutoCommit(false);
+            } catch (SQLException e) {}
+            try {
+                node3Connection = node3JdbcTemplate.getDataSource().getConnection();
+                node3Connection.setAutoCommit(false);
+            } catch (SQLException e) {}
+        }
+
         // set transaction isolation level
         setTransactionIsolationLevel(connection, data.getIsolationLevel());
 
         // start transaction
         connection.setAutoCommit(false);
 
-        // get initial island
-        PreparedStatement islandQuery = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
+        // get initial island and prepare locks
+        PreparedStatement islandQuery = connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
         islandQuery.setInt(1, data.getId());
         ResultSet islandQueryResult = islandQuery.executeQuery();
         islandQueryResult.next();
         String initialIsland = islandQueryResult.getString("island");
+
+        try {
+            PreparedStatement lockStatement = node2Connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
+            lockStatement.setInt(1, data.getId());
+            lockStatement.executeQuery();
+        } catch (SQLException e) {
+            // consider node as down if failed to obtain lock
+            e.printStackTrace();
+            node2Connection = null;
+        }
+        try {
+            PreparedStatement lockStatement = node3Connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
+            lockStatement.setInt(1, data.getId());
+            lockStatement.executeQuery();
+        } catch (SQLException e) {
+            // consider node as down if failed to obtain lock
+            e.printStackTrace();
+            node3Connection = null;
+        }
 
         // Update
         PreparedStatement query = connection.prepareStatement(data.getTransaction());
         query.setInt(1, data.getId());
         query.executeUpdate();
 
-        // Sleep or Not Sleep
-        switch(data.getSleepOrNot()) {
-            case "sleep-before" -> {
-                // sleep in Java instead of SQL
-                Thread.sleep(5000);
-                // Commit or Rollback
-                switch(data.getCommitOrRollback()) {
-                    case "commit" -> {
-                        connection.commit();    // commit changes to appointments table of selected node
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
+        if(data.getSleepOrNot().equals("sleep-before")) {
+            // sleep in Java instead of SQL
+            Thread.sleep(5000);
+        }
+        connection.commit();
+        if(data.getSleepOrNot().equals("sleep-after")) {
+            // sleep in Java instead of SQL
+            Thread.sleep(8000);
+        }
 
-                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
-                        logQuery.setInt(1, data.getId());
-                        logQuery.executeUpdate();
-                        connection.commit();   // commit changes to appointment_logs table
+        switch(data.getCommitOrRollback()) {
+            case "commit" -> {
+                PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
+                logQuery.setInt(1, data.getId());
+                logQuery.executeUpdate();
 
-                        PreparedStatement islandQuery2 = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
-                        islandQuery2.setInt(1, data.getId());
-                        ResultSet islandQuery2Result = islandQuery.executeQuery();
-                        islandQuery2Result.next();
-                        Appointments newIslandData = extractResult(islandQuery2Result);
-                        String finalIsland = islandQuery2Result.getString("island");
+                PreparedStatement islandQuery2 = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
+                islandQuery2.setInt(1, data.getId());
+                ResultSet islandQuery2Result = islandQuery.executeQuery();
+                islandQuery2Result.next();
+                Appointments newIslandData = extractResult(islandQuery2Result);
+                String finalIsland = islandQuery2Result.getString("island");
 
-                        System.out.println(initialIsland);
-                        System.out.println(finalIsland);
-                        if(!initialIsland.equals(finalIsland)) {
-                            if(initialIsland.equals("Luzon")) {
-                                // delete data from initial slave
-                                Connection node2Connection = node2JdbcTemplate.getDataSource().getConnection();
-                                node2Connection.setAutoCommit(false);
-                                PreparedStatement deleteIslandQuery = node2Connection.prepareStatement("DELETE FROM appointments WHERE id = ?");
-                                deleteIslandQuery.setInt(1, data.getId());
-                                deleteIslandQuery.executeUpdate();
-                                node2Connection.commit();   // commit changes to appointment_logs table
-                                node2Connection.close();
+                System.out.println(initialIsland);
+                System.out.println(finalIsland);
 
-                                // add data to new slave
-                                Connection node3Connection = node3JdbcTemplate.getDataSource().getConnection();
-                                node3Connection.setAutoCommit(false);
-                                PreparedStatement insertIslandQuery = insertAppointment(node3Connection, newIslandData);
-                                insertIslandQuery.executeUpdate();
-                                node3Connection.commit();   // commit changes to appointment_logs table
-                                node3Connection.close();
-                            } else {
-                                Connection node3Connection = node3JdbcTemplate.getDataSource().getConnection();
-                                node3Connection.setAutoCommit(false);
-                                PreparedStatement deleteIslandQuery = node3Connection.prepareStatement("DELETE FROM appointments WHERE id = ?");
-                                deleteIslandQuery.setInt(1, data.getId());
-                                deleteIslandQuery.executeUpdate();
-                                node3Connection.commit();   // commit changes to appointment_logs table
-                                node3Connection.close();
+                Connection deleteFrom = null, addTo = null;
+                if(!initialIsland.equals(finalIsland)) {
+                    if(initialIsland.equals("Luzon")) {
+                        deleteFrom = node2Connection;
+                        addTo = node3Connection;
 
-                                // add data to new slave
-                                Connection node2Connection = node2JdbcTemplate.getDataSource().getConnection();
-                                node2Connection.setAutoCommit(false);
-                                PreparedStatement insertIslandQuery = insertAppointment(node2Connection, newIslandData);
-                                insertIslandQuery.executeUpdate();
-                                node2Connection.commit();   // commit changes to appointment_logs table
-                                node2Connection.close();
-                            }
-                        }
-                    } default -> { // rollback
-                        connection.rollback();
+                    } else {
+                        deleteFrom = node3Connection;
+                        addTo = node2Connection;
                     }
-                }
-            }
-            case "sleep-after" -> {
-                // Commit or Rollback
-                switch(data.getCommitOrRollback()) {
-                    case "commit" -> {
-                        connection.commit();    // commit changes to appointments table of selected node
-                        Thread.sleep(8000);
+                } else {
+                    if(initialIsland.equals("Luzon")) {
+                        deleteFrom = node3Connection;
+                        addTo = node2Connection;
 
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
-
-                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
-                        logQuery.setInt(1, data.getId());
-                        logQuery.executeUpdate();
-                        connection.commit();    // commit changes to appointment_logs table
-
-                        PreparedStatement islandQuery2 = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
-                        islandQuery2.setInt(1, data.getId());
-                        ResultSet islandQuery2Result = islandQuery.executeQuery();
-                        islandQuery2Result.next();
-                        Appointments newIslandData = extractResult(islandQuery2Result);
-                        String finalIsland = islandQuery2Result.getString("island");
-
-                        if(!initialIsland.equals(finalIsland)) {
-                            if(initialIsland.equals("Luzon")) {
-                                // delete data from initial slave
-                                Connection node2Connection = node2JdbcTemplate.getDataSource().getConnection();
-                                node2Connection.setAutoCommit(false);
-                                PreparedStatement deleteIslandQuery = node2Connection.prepareStatement("DELETE FROM appointments WHERE id = ?");
-                                deleteIslandQuery.setInt(1, data.getId());
-                                deleteIslandQuery.executeUpdate();
-                                node2Connection.commit();   // commit changes to appointment_logs table
-                                node2Connection.close();
-
-                                // add data to new slave
-                                Connection node3Connection = node3JdbcTemplate.getDataSource().getConnection();
-                                node3Connection.setAutoCommit(false);
-                                PreparedStatement insertIslandQuery = insertAppointment(node3Connection, newIslandData);
-                                insertIslandQuery.executeUpdate();
-                                node3Connection.commit();   // commit changes to appointment_logs table
-                                node3Connection.close();
-                            } else {
-                                Connection node3Connection = node3JdbcTemplate.getDataSource().getConnection();
-                                node3Connection.setAutoCommit(false);
-                                PreparedStatement deleteIslandQuery = node3Connection.prepareStatement("DELETE FROM appointments WHERE id = ?");
-                                deleteIslandQuery.setInt(1, data.getId());
-                                deleteIslandQuery.executeUpdate();
-                                node3Connection.commit();   // commit changes to appointment_logs table
-                                node3Connection.close();
-
-                                // add data to new slave
-                                Connection node2Connection = node2JdbcTemplate.getDataSource().getConnection();
-                                node2Connection.setAutoCommit(false);
-                                PreparedStatement insertIslandQuery = insertAppointment(node2Connection, newIslandData);
-                                insertIslandQuery.executeUpdate();
-                                node2Connection.commit();   // commit changes to appointment_logs table
-                                node2Connection.close();
-                            }
-                        }
-
-
-                    } default -> { // rollback
-                        connection.rollback();
-                        Thread.sleep(5000);
+                    } else {
+                        deleteFrom = node2Connection;
+                        addTo = node3Connection;
                     }
                 }
 
-            }
-            default -> { // not-sleep
-                switch(data.getCommitOrRollback()) {
-                    case "commit" -> {
-                        connection.commit();    // commit changes to appointments table of selected node
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
-
-                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
-                        logQuery.setInt(1, data.getId());
-                        logQuery.executeUpdate();
-                        connection.commit();   // commit changes to appointment_logs table
-
-                        PreparedStatement islandQuery2 = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
-                        islandQuery2.setInt(1, data.getId());
-                        ResultSet islandQuery2Result = islandQuery.executeQuery();
-                        islandQuery2Result.next();
-                        Appointments newIslandData = extractResult(islandQuery2Result);
-                        String finalIsland = islandQuery2Result.getString("island");
-
-                        if(!initialIsland.equals(finalIsland)) {
-                            if(initialIsland.equals("Luzon")) {
-                                // delete data from initial slave
-                                Connection node2Connection = node2JdbcTemplate.getDataSource().getConnection();
-                                node2Connection.setAutoCommit(false);
-                                PreparedStatement deleteIslandQuery = node2Connection.prepareStatement("DELETE FROM appointments WHERE id = ?");
-                                deleteIslandQuery.setInt(1, data.getId());
-                                deleteIslandQuery.executeUpdate();
-                                node2Connection.commit();   // commit changes to appointment_logs table
-                                node2Connection.close();
-
-                                // add data to new slave
-                                Connection node3Connection = node3JdbcTemplate.getDataSource().getConnection();
-                                node3Connection.setAutoCommit(false);
-                                PreparedStatement insertIslandQuery = insertAppointment(node3Connection, newIslandData);
-                                insertIslandQuery.executeUpdate();
-                                node3Connection.commit();   // commit changes to appointment_logs table
-                                node3Connection.close();
-                            } else {
-                                Connection node3Connection = node3JdbcTemplate.getDataSource().getConnection();
-                                node3Connection.setAutoCommit(false);
-                                PreparedStatement deleteIslandQuery = node3Connection.prepareStatement("DELETE FROM appointments WHERE id = ?");
-                                deleteIslandQuery.setInt(1, data.getId());
-                                deleteIslandQuery.executeUpdate();
-                                node3Connection.commit();   // commit changes to appointment_logs table
-                                node3Connection.close();
-
-                                // add data to new slave
-                                Connection node2Connection = node2JdbcTemplate.getDataSource().getConnection();
-                                node2Connection.setAutoCommit(false);
-                                PreparedStatement insertIslandQuery = insertAppointment(node2Connection, newIslandData);
-                                insertIslandQuery.executeUpdate();
-                                node2Connection.commit();   // commit changes to appointment_logs table
-                                node2Connection.close();
-                            }
-                        }
-                    } default -> { // rollback
-                        connection.rollback();
-                    }
+                // delete data from initial slave
+                try {
+                    PreparedStatement deleteIslandQuery = deleteFrom.prepareStatement("DELETE FROM appointments WHERE id = ?");
+                    deleteIslandQuery.setInt(1, data.getId());
+                    deleteIslandQuery.executeUpdate();
+                } catch (Exception ignored) {
+                    ignored.printStackTrace();
                 }
+
+                // add data to new slave
+                try {
+                    PreparedStatement insertIslandQuery = upsertAppointment(addTo, newIslandData, false);
+                    insertIslandQuery.executeUpdate();
+                } catch (Exception ignored) {
+                    ignored.printStackTrace();
+                }
+
+                // commit changes to appointments table of all nodes
+                connection.commit();
+                try {
+                    node2Connection.commit();
+                } catch (Exception ignored) {}
+                try {
+                    node3Connection.commit();
+                } catch (Exception ignored) {}
+            } default -> { // rollback
+                connection.rollback();
             }
         }
 
@@ -504,6 +421,12 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // store result
         Appointments appointment = extractResult(queryResult);
         connection.close();
+        try {
+            node2Connection.close();
+        } catch (Exception ignored) {}
+        try {
+            node3Connection.close();
+        } catch (Exception ignored) {}
         return appointment;
     }
 
