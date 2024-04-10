@@ -172,8 +172,12 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         replicationSubtask(node1JdbcTemplate, new HashSet<>(List.of("Luzon", "Visayas", "Mindanao")), node2JdbcTemplate, node3JdbcTemplate);
     }
 
+    boolean wasDown = true;
     private void ensureConsistency() {
-          replicationTask();
+        if(wasDown) {
+            replicationTask();
+            wasDown = false;
+        }
     }
 
 //    @Override
@@ -556,6 +560,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     queryResult.next();
                     return connection;
                 } catch (Exception e) {
+                    wasDown = true;
                     e.printStackTrace();
                 }
 
@@ -572,6 +577,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                         return connection;
                     }
                 } catch (Exception e) {
+                    wasDown = true;
                     e.printStackTrace();
                 }
 
@@ -594,6 +600,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                         return connection;
                     }
                 } catch (Exception e) {
+                    wasDown = true;
                     e.printStackTrace();
                 }
 
@@ -608,6 +615,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     queryResult.next();
                     return connection;
                 } catch (Exception e) {
+                    wasDown = true;
                     e.printStackTrace();
                 }
 
@@ -630,6 +638,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                         return connection;
                     }
                 } catch (Exception e) {
+                    wasDown = true;
                     e.printStackTrace();
                 }
 
@@ -644,6 +653,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     queryResult.next();
                     return connection;
                 } catch (Exception e) {
+                    wasDown = true;
                     e.printStackTrace();
                 }
 
