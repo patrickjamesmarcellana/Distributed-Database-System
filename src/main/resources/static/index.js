@@ -509,6 +509,16 @@ $("#submit-btn").click(async (e) => {
     clearFields()
 })
 
+$("#operation-type").change(() => {
+    const operation = $("#operation-type").val()
+    if(operation === 'Update' || operation === 'Delete') {
+        $(".hide-if-write").addClass("hidden")
+    } else {
+        $(".hide-if-write").removeClass("hidden")
+    }
+
+})
+
 function clearFields() {
     $("#node").val("")
     $("#isolation-level").val("")

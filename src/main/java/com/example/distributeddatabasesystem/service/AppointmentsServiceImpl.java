@@ -162,12 +162,9 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                 e.printStackTrace();
             }
         }
-
-
-
     }
 
-    @Scheduled(fixedDelay=60000)
+     @Scheduled(fixedDelay=60000)
     public synchronized void replicationTask() {
         System.out.println("Starting replication task #1 - load data to slave");
         replicationSubtask(node2JdbcTemplate, new HashSet<>(List.of("Luzon")), node1JdbcTemplate, node3JdbcTemplate);
@@ -176,7 +173,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     }
 
     private void ensureConsistency() {
-        replicationTask();
+         replicationTask();
     }
 
 //    @Override
@@ -364,7 +361,6 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // store result
         Appointments appointment = extractResult(queryResult);
         connection.close();
-        System.out.println(appointment.getClinic_hospitalname());
         return appointment;
     }
 

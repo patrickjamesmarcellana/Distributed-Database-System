@@ -19,12 +19,21 @@
 
         </div>
 
+        <div>Operation Type:</div>
+        <select name="operation-type" id="operation-type" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
+            <option value="" disabled selected hidden>Select Operation Type</option>
+            <option value="Read">Read</option>
+            <option value="Update">Write (Update)</option>
+            <option value="Delete">Write (Delete)</option>
+            <option value="Find All">Find All</option>
+        </select> <br>
+
         <div>Node/Server:</div>
         <select name="node" id="node" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
             <option value="" disabled selected hidden>Select Node/Server</option>
             <option value="20189">Central Server</option>
-            <option value="20190">Slave Node 1 (Luzon)</option>
-            <option value="20191">Slave Node 2 (Visayas/Mindanao)</option>
+            <option class="hide-if-write" value="20190">Slave Node 1 (Luzon)</option>
+            <option class="hide-if-write" value="20191">Slave Node 2 (Visayas/Mindanao)</option>
         </select> <br>
 
         <div>Isolation Level:</div>
@@ -34,15 +43,6 @@
             <option value="READ COMMITTED">Read Committed</option>
             <option value="REPEATABLE READ">Repeatable Read</option>
             <option value="SERIALIZABLE">Serializable</option>
-        </select> <br>
-
-        <div>Operation Type:</div>
-        <select name="operation-type" id="operation-type" required class="text-xs w-96 font-bold mt-2 border-2 border-black p-0.5">
-            <option value="" disabled selected hidden>Select Operation Type</option>
-            <option value="Read">Read</option>
-            <option value="Update">Write (Update)</option>
-            <option value="Delete">Write (Delete)</option>
-            <option value="Find All">Find All</option>
         </select> <br>
 
         <div>Transaction:</div>
