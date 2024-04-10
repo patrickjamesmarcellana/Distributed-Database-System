@@ -46,7 +46,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         Connection destinationConnection = null;
         try {
             destinationConnection = Objects.requireNonNull(destination.getDataSource()).getConnection();
-            destinationConnection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            destinationConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             destinationConnection.setAutoCommit(false);
 
             System.out.println("Connected to " + destinationConnection.getMetaData().getURL());
@@ -65,7 +65,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             for(JdbcTemplate source : sources) {
                 try {
                     Connection sourceConnection = Objects.requireNonNull(source.getDataSource()).getConnection();
-                    sourceConnection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+                    sourceConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
                     PreparedStatement lastReadTimeStampQuery = destinationConnection.prepareStatement("SELECT last_modified FROM mco2.node_params WHERE url = ?;");
                     lastReadTimeStampQuery.setString(1, sourceConnection.getMetaData().getURL());
