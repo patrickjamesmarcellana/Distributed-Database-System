@@ -335,21 +335,21 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         query.setInt(1, data.getId());
         query.executeUpdate();
 
+        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
+        logQuery.setInt(1, data.getId());
+        logQuery.executeUpdate();
+
         if(data.getSleepOrNot().equals("sleep-before")) {
             // sleep in Java instead of SQL
             Thread.sleep(5000);
         }
-        connection.commit();
-        if(data.getSleepOrNot().equals("sleep-after")) {
-            // sleep in Java instead of SQL
-            Thread.sleep(8000);
-        }
-
         switch(data.getCommitOrRollback()) {
             case "commit" -> {
-                PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
-                logQuery.setInt(1, data.getId());
-                logQuery.executeUpdate();
+                connection.commit();
+                if(data.getSleepOrNot().equals("sleep-after")) {
+                    // sleep in Java instead of SQL
+                    Thread.sleep(8000);
+                }
 
                 PreparedStatement islandQuery2 = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
                 islandQuery2.setInt(1, data.getId());
@@ -400,7 +400,6 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                 }
 
                 // commit changes to appointments table of all nodes
-                connection.commit();
                 try {
                     node2Connection.commit();
                 } catch (Exception ignored) {}
@@ -408,6 +407,10 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     node3Connection.commit();
                 } catch (Exception ignored) {}
             } default -> { // rollback
+                if(data.getSleepOrNot().equals("sleep-after")) {
+                    // sleep in Java instead of SQL
+                    Thread.sleep(8000);
+                }
                 connection.rollback();
             }
         }
