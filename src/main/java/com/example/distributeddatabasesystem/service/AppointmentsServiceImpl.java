@@ -295,11 +295,11 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             try {
                 node2Connection = node2JdbcTemplate.getDataSource().getConnection();
                 node2Connection.setAutoCommit(false);
-            } catch (SQLException e) {}
+            } catch (Exception e) {}
             try {
                 node3Connection = node3JdbcTemplate.getDataSource().getConnection();
                 node3Connection.setAutoCommit(false);
-            } catch (SQLException e) {}
+            } catch (Exception e) {}
         }
 
         // set transaction isolation level
@@ -319,7 +319,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             PreparedStatement lockStatement = node2Connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
             lockStatement.setInt(1, data.getId());
             lockStatement.executeQuery();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             // consider node as down if failed to obtain lock
             e.printStackTrace();
             node2Connection = null;
@@ -329,7 +329,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             PreparedStatement lockStatement = node3Connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
             lockStatement.setInt(1, data.getId());
             lockStatement.executeQuery();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             // consider node as down if failed to obtain lock
             e.printStackTrace();
             node3Connection = null;
