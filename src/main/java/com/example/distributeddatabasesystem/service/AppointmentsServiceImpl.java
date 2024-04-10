@@ -351,15 +351,16 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         }
         switch(data.getCommitOrRollback()) {
             case "commit" -> {
+                PreparedStatement islandQuery2 = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
+                islandQuery2.setInt(1, data.getId());
+                ResultSet islandQuery2Result = islandQuery.executeQuery();
+
                 connection.commit();
                 if(data.getSleepOrNot().equals("sleep-after")) {
                     // sleep in Java instead of SQL
                     Thread.sleep(8000);
                 }
 
-                PreparedStatement islandQuery2 = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
-                islandQuery2.setInt(1, data.getId());
-                ResultSet islandQuery2Result = islandQuery.executeQuery();
                 islandQuery2Result.next();
                 Appointments newIslandData = extractResult(islandQuery2Result);
                 String finalIsland = islandQuery2Result.getString("island");
@@ -426,6 +427,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         }
 
         // retrieve updated row
+        connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
         PreparedStatement findQuery = connection.prepareStatement("SELECT * FROM appointments WHERE id = ?;");
         findQuery.setInt(1, data.getId());
         ResultSet queryResult = findQuery.executeQuery();
