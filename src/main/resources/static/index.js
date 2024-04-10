@@ -460,7 +460,8 @@ $("#submit-btn").click(async (e) => {
             })
             const appointment = await result.json()
             console.log(appointment)
-            displayResult(appointment)
+            appointments = [appointment]
+            displayResult(appointments)
             displaySuccess("updated")
         } catch (err) {
             console.error(err)

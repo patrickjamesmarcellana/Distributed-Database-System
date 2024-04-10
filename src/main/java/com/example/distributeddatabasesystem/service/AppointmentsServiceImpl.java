@@ -280,7 +280,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                 switch(data.getCommitOrRollback()) {
                     case "commit" -> {
                         connection.commit();    // commit changes to appointments table of selected node
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId());
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
 
                         PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
                         logQuery.setInt(1, data.getId());
@@ -298,7 +298,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                         connection.commit();    // commit changes to appointments table of selected node
                         Thread.sleep(8000);
 
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId());
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
 
                         PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
                         logQuery.setInt(1, data.getId());
@@ -315,7 +315,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                 switch(data.getCommitOrRollback()) {
                     case "commit" -> {
                         connection.commit();    // commit changes to appointments table of selected node
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId());
+                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
 
                         PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
                         logQuery.setInt(1, data.getId());
@@ -337,6 +337,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // store result
         Appointments appointment = extractResult(queryResult);
         connection.close();
+        System.out.println(appointment.getClinic_hospitalname());
         return appointment;
     }
 
@@ -541,10 +542,14 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         }
     }
 
-    public void tryUpdatingSlaveNodes(String transaction, int id) {
+    public void tryUpdatingSlaveNodes(String transaction, int id, String isolationLevel) {
         // try to update slave nodes directly for replication
         try {
             Connection slave1Connection = node2JdbcTemplate.getDataSource().getConnection();
+            // set transaction isolation level
+            setTransactionIsolationLevel(slave1Connection, isolationLevel);
+            // start transaction
+            slave1Connection.setAutoCommit(false);
             // Update
             PreparedStatement slave1Query = slave1Connection.prepareStatement(transaction);
             slave1Query.setInt(1, id);
@@ -557,6 +562,10 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         try {
             Connection slave2Connection = node3JdbcTemplate.getDataSource().getConnection();
+            // set transaction isolation level
+            setTransactionIsolationLevel(slave2Connection, isolationLevel);
+            // start transaction
+            slave2Connection.setAutoCommit(false);
             // Update
             PreparedStatement slave2Query = slave2Connection.prepareStatement(transaction);
             slave2Query.setInt(1, id);
