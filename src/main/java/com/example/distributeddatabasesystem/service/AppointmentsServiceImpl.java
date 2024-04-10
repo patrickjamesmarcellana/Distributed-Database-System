@@ -323,6 +323,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             // consider node as down if failed to obtain lock
             e.printStackTrace();
             node2Connection = null;
+            wasDown = true;
         }
         try {
             PreparedStatement lockStatement = node3Connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
@@ -332,6 +333,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             // consider node as down if failed to obtain lock
             e.printStackTrace();
             node3Connection = null;
+            wasDown = true;
         }
 
         // Update
@@ -392,7 +394,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     deleteIslandQuery.setInt(1, data.getId());
                     deleteIslandQuery.executeUpdate();
                 } catch (Exception ignored) {
-                    ignored.printStackTrace();
+                    wasDown = true;
                 }
 
                 // add data to new slave
@@ -400,16 +402,20 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                     PreparedStatement insertIslandQuery = upsertAppointment(addTo, newIslandData, false);
                     insertIslandQuery.executeUpdate();
                 } catch (Exception ignored) {
-                    ignored.printStackTrace();
+                    wasDown = true;
                 }
 
                 // commit changes to appointments table of all nodes
                 try {
                     node2Connection.commit();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    wasDown = true;
+                }
                 try {
                     node3Connection.commit();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    wasDown = true;
+                }
             } default -> { // rollback
                 if(data.getSleepOrNot().equals("sleep-after")) {
                     // sleep in Java instead of SQL
@@ -430,10 +436,14 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         connection.close();
         try {
             node2Connection.close();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            wasDown = true;
+        }
         try {
             node3Connection.close();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            wasDown = true;
+        }
         return appointment;
     }
 
@@ -698,6 +708,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             slave1Connection.close();
         } catch (Exception e) {
             e.printStackTrace();
+            wasDown = true;
         }
 
         try {
@@ -714,6 +725,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             slave2Connection.close();
         } catch (Exception e) {
             e.printStackTrace();
+            wasDown = true;
         }
     }
 
