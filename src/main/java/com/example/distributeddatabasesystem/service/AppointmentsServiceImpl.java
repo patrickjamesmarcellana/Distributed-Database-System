@@ -61,6 +61,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             ArrayList<PreparedStatement> updateLastModifiedOfSources = new ArrayList<>();
             ArrayList<JdbcTemplate> sources = new ArrayList<>(List.of(source1, source2));
             HashMap<Integer, Appointments> masterAppointments = new HashMap<>();
+            HashSet<Integer> toDelete = new HashSet<>();
             for(JdbcTemplate source : sources) {
                 try {
                     Connection sourceConnection = Objects.requireNonNull(source.getDataSource()).getConnection();
@@ -98,6 +99,18 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                         }
                     }
 
+                    // we will only delete rows that have:
+                    //   1. that have an is_delete entry in the log, indicating that a delete operation was performed and:
+                    //   2. does not contain any succeeding operations in the log that causes it to rise from the dead (e.g. create)
+                    PreparedStatement deletedQuery = sourceConnection.prepareStatement("SELECT DISTINCT appointment_id FROM appointments_log a WHERE ? < a.event_id AND a.event_id <= ? AND a.is_delete <=> 1 AND a.event_id NOT IN (SELECT DISTINCT appointment_id FROM appointments_log a_next WHERE a.event_id < a_next.event_id AND a_next.event_id <= ? AND a.is_delete <=> 1);");
+                    deletedQuery.setObject(1, lastReadEventId);
+                    deletedQuery.setObject(2, serverMaxEventId);
+                    deletedQuery.setObject(3, serverMaxEventId);
+                    ResultSet deletedRowsResults = deletedQuery.executeQuery();
+                    while(deletedRowsResults.next()) {
+                        toDelete.add(deletedRowsResults.getInt(1));
+                    }
+
                     // if there is new data, update the last modified timestamp of the destination node
                     PreparedStatement updateLastModified = destinationConnection.prepareStatement("INSERT INTO mco2.node_params (url, last_modified) VALUES(?, ?) ON DUPLICATE KEY UPDATE last_modified = VALUES(last_modified);");
                     updateLastModified.setString(1, sourceConnection.getMetaData().getURL());
@@ -114,6 +127,11 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             try {
                 System.out.println("Writing to " + destinationConnection.getMetaData().getURL());
                 for(Appointments appointment : masterAppointments.values()) {
+                    // prevent any insertion of items that are marked for deletion
+                    if(toDelete.contains(appointment.getId())) {
+                        continue;
+                    }
+
                     if(destionationIslands.contains(appointment.getIsland())) {
                         // save appointment
                         System.out.println("Writing data of id=" + appointment.getId());
@@ -125,6 +143,11 @@ public class AppointmentsServiceImpl implements AppointmentsService {
                         deleteStatement.setInt(1, appointment.getId());
                         deleteStatement.executeUpdate();
                     }
+                }
+                for(int id : toDelete) {
+                    PreparedStatement deleteStatement = destinationConnection.prepareStatement("DELETE FROM appointments WHERE id = ?;");
+                    deleteStatement.setInt(1, id);
+                    deleteStatement.executeUpdate();
                 }
 
                 for(PreparedStatement updateLastModified : updateLastModifiedOfSources) {
@@ -374,7 +397,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // Commit or Rollback
         switch(data.getCommitOrRollback()) {
             case "commit" -> {
-                PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id) VALUES (?);");
+                PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
                 logQuery.setInt(1, data.getId());
                 logQuery.executeUpdate();
                 connection.commit();
