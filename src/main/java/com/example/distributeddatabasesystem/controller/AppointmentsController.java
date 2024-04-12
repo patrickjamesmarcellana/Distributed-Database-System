@@ -113,4 +113,13 @@ public class AppointmentsController {
         }
     }
 
+    @GetMapping("/reset")
+    public ResponseEntity<List<Appointments>> reset() {
+        try {
+            appointmentsService.resetSlaves();
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

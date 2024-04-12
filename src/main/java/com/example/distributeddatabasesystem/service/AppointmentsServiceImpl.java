@@ -42,6 +42,23 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     @Qualifier("node3JdbcTemplate")
     JdbcTemplate node3JdbcTemplate;
 
+    public void resetSlaves() {
+        try {
+            Connection node2Connection = node2JdbcTemplate.getDataSource().getConnection();
+            node2Connection.setAutoCommit(false);
+            node2Connection.prepareStatement("TRUNCATE TABLE mco2.appointments;").executeUpdate();
+            node2Connection.prepareStatement("TRUNCATE TABLE mco2.node_params;").executeUpdate();
+            node2Connection.commit();
+        } catch (Exception e) {}
+        try {
+            Connection node3Connection = node3JdbcTemplate.getDataSource().getConnection();
+            node3Connection.setAutoCommit(false);
+            node3Connection.prepareStatement("TRUNCATE TABLE mco2.appointments;").executeUpdate();
+            node3Connection.prepareStatement("TRUNCATE TABLE mco2.node_params;").executeUpdate();
+            node3Connection.commit();
+        } catch (Exception e) {}
+    }
+
     private void replicationSubtask(JdbcTemplate destination, HashSet<String> destionationIslands, JdbcTemplate source1, JdbcTemplate source2) {
         Connection destinationConnection = null;
         try {

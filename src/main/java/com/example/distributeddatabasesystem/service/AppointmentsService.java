@@ -15,4 +15,5 @@ public interface AppointmentsService {
     public Appointments update(Transaction data) throws SQLException, InterruptedException;
     public void delete (Transaction data) throws SQLException, InterruptedException;
     public List<Appointments> findAllAppointments(String node, String transaction, String operation) throws SQLException;
+    public void resetSlaves();
 }
