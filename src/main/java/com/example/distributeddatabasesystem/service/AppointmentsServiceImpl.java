@@ -42,7 +42,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     @Qualifier("node3JdbcTemplate")
     JdbcTemplate node3JdbcTemplate;
 
-    public void resetSlaves() {
+    public synchronized void resetSlaves() {
         try {
             Connection node2Connection = node2JdbcTemplate.getDataSource().getConnection();
             node2Connection.setAutoCommit(false);
