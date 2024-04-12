@@ -454,75 +454,110 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // determine which node to use in getConnection
         Connection connection = getConnection(data.getNode(), data.getId());
 
+        Connection node2Connection = null;
+        Connection node3Connection = null;
+
+        if(connection.getMetaData().getURL().contains("20189")) { // hack to check if using the master node
+            try {
+                node2Connection = node2JdbcTemplate.getDataSource().getConnection();
+                node2Connection.setAutoCommit(false);
+            } catch (Exception e) {}
+            try {
+                node3Connection = node3JdbcTemplate.getDataSource().getConnection();
+                node3Connection.setAutoCommit(false);
+            } catch (Exception e) {}
+        }
+
         // set transaction isolation level
         setTransactionIsolationLevel(connection, data.getIsolationLevel());
 
         // start transaction
         connection.setAutoCommit(false);
 
+        // lock all
+        PreparedStatement islandQuery = connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
+        islandQuery.setInt(1, data.getId());
+        islandQuery.executeQuery();
+
+        try {
+            PreparedStatement lockStatement = node2Connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
+            lockStatement.setInt(1, data.getId());
+            lockStatement.executeQuery();
+        } catch (Exception e) {
+            // consider node as down if failed to obtain lock
+            e.printStackTrace();
+            node2Connection = null;
+            wasDown = true;
+        }
+        try {
+            PreparedStatement lockStatement = node3Connection.prepareStatement("SELECT * FROM appointments WHERE id = ? FOR UPDATE;");
+            lockStatement.setInt(1, data.getId());
+            lockStatement.executeQuery();
+        } catch (Exception e) {
+            // consider node as down if failed to obtain lock
+            e.printStackTrace();
+            node3Connection = null;
+            wasDown = true;
+        }
+
         // Delete
         PreparedStatement query = connection.prepareStatement(data.getTransaction());
         query.setInt(1, data.getId());
         query.executeUpdate();
 
-        // Sleep or Not Sleep
-        switch(data.getSleepOrNot()) {
-            case "sleep-before" -> {
-                // sleep in Java instead of SQL
-                Thread.sleep(5000);
-                // Commit or Rollback
-                switch(data.getCommitOrRollback()) {
-                    case "commit" -> {
-                        connection.commit();    // commit changes to appointments table of selected node
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
+        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
+        logQuery.setInt(1, data.getId());
+        logQuery.executeUpdate();
 
-                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
-                        logQuery.setInt(1, data.getId());
-                        logQuery.executeUpdate();
-                        connection.commit();   // commit changes to appointment_logs table
-                    } default -> { // rollback
-                        connection.rollback();
-                    }
-                }
-            }
-            case "sleep-after" -> {
-                // Commit or Rollback
-                switch(data.getCommitOrRollback()) {
-                    case "commit" -> {
-                        connection.commit();    // commit changes to appointments table of selected node
-                        Thread.sleep(8000);
-
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
-
-                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
-                        logQuery.setInt(1, data.getId());
-                        logQuery.executeUpdate();
-                        connection.commit();    // commit changes to appointment_logs table
-                    } default -> { // rollback
-                        connection.rollback();
-                        Thread.sleep(5000);
-                    }
+        if(data.getSleepOrNot().equals("sleep-before")) {
+            // sleep in Java instead of SQL
+            Thread.sleep(5000);
+        }
+        switch(data.getCommitOrRollback()) {
+            case "commit" -> {
+                connection.commit();
+                if(data.getSleepOrNot().equals("sleep-after")) {
+                    // sleep in Java instead of SQL
+                    Thread.sleep(8000);
                 }
 
-            }
-            default -> { // not-sleep
-                switch(data.getCommitOrRollback()) {
-                    case "commit" -> {
-                        connection.commit();    // commit changes to appointments table of selected node
-                        tryUpdatingSlaveNodes(data.getTransaction(), data.getId(), data.getIsolationLevel());
-
-                        PreparedStatement logQuery = connection.prepareStatement("INSERT INTO mco2.`appointments_log` (appointment_id, is_delete) VALUES (?, 1);");
-                        logQuery.setInt(1, data.getId());
-                        logQuery.executeUpdate();
-                        connection.commit();   // commit changes to appointment_logs table
-                    } default -> { // rollback
-                        connection.rollback();
-                    }
+                // commit changes to appointments table of all nodes
+                try {
+                    PreparedStatement query2 = node2Connection.prepareStatement(data.getTransaction());
+                    query2.setInt(1, data.getId());
+                    query2.executeUpdate();
+                    node2Connection.commit();
+                } catch (Exception ignored) {
+                    wasDown = true;
                 }
+                try {
+                    PreparedStatement query2 = node3Connection.prepareStatement(data.getTransaction());
+                    query2.setInt(1, data.getId());
+                    query2.executeUpdate();
+                    node3Connection.commit();
+                } catch (Exception ignored) {
+                    wasDown = true;
+                }
+            } default -> { // rollback
+                if(data.getSleepOrNot().equals("sleep-after")) {
+                    // sleep in Java instead of SQL
+                    Thread.sleep(8000);
+                }
+                connection.rollback();
             }
         }
 
         connection.close();
+        try {
+            node2Connection.close();
+        } catch (Exception ignored) {
+            wasDown = true;
+        }
+        try {
+            node3Connection.close();
+        } catch (Exception ignored) {
+            wasDown = true;
+        }
     }
 
     public List<Appointments> findAllAppointments(String node, String transaction, String operation) throws SQLException {
@@ -691,43 +726,6 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             default -> { // SERIALIZABLE
                 connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             }
-        }
-    }
-
-    public void tryUpdatingSlaveNodes(String transaction, int id, String isolationLevel) {
-        // try to update slave nodes directly for replication
-        try {
-            Connection slave1Connection = node2JdbcTemplate.getDataSource().getConnection();
-            // set transaction isolation level
-            setTransactionIsolationLevel(slave1Connection, isolationLevel);
-            // start transaction
-            slave1Connection.setAutoCommit(false);
-            // Update
-            PreparedStatement slave1Query = slave1Connection.prepareStatement(transaction);
-            slave1Query.setInt(1, id);
-            slave1Query.executeUpdate();
-            slave1Connection.commit();
-            slave1Connection.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            wasDown = true;
-        }
-
-        try {
-            Connection slave2Connection = node3JdbcTemplate.getDataSource().getConnection();
-            // set transaction isolation level
-            setTransactionIsolationLevel(slave2Connection, isolationLevel);
-            // start transaction
-            slave2Connection.setAutoCommit(false);
-            // Update
-            PreparedStatement slave2Query = slave2Connection.prepareStatement(transaction);
-            slave2Query.setInt(1, id);
-            slave2Query.executeUpdate();
-            slave2Connection.commit();
-            slave2Connection.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            wasDown = true;
         }
     }
 
