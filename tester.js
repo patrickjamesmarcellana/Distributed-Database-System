@@ -27,17 +27,30 @@ const _delete = async(data) => {
     }) 
 };
 
-/*
-const data = {
+const test_1_1 = async () => {
+    const data2 = {
         node: "20189",
-        isolationLevel: "SERIALIZABLE",
+        isolationLevel: "READ UNCOMMITTED",
         transaction: "SELECT * FROM appointments WHERE id = ?;",
         operation: "Read",
-        id: "1000",
-        sleepOrNot: "not-sleep",
+        id: "1",
+        sleepOrNot: "sleep-before",
         commitOrRollback: "commit"
     }
-    */
+    const data3 = {
+        node: "20190",
+        isolationLevel: "READ UNCOMMITTED",
+        transaction: "SELECT * FROM appointments WHERE id = ?;",
+        operation: "Read",
+        id: "1",
+        sleepOrNot: "dont-sleep",
+        commitOrRollback: "commit"
+    }
+    
+    const ret = await Promise.all([_read(data2), _read(data3)]);
+    console.log(ret)
+}
+
 
 const test_3_2 = async () => {
     const data2 = {
@@ -87,4 +100,4 @@ const test_3_3 = async () => {
     console.log(ret)
 }
 
-test_3_3();
+test_1_1();
