@@ -1,7 +1,9 @@
 package com.example.distributeddatabasesystem.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.*;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -33,16 +35,19 @@ public class AppConfig
         return new JdbcTemplate(dataSource);
     }
 
+    @Autowired
+    private Environment environment;
+
     @Bean
     @Primary
     public DataSource node1DataSource()
     {
         System.out.println("TEST");
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://ccscloud.dlsu.edu.ph:20189/mco2");
-        dataSource.setUsername("user");
-        dataSource.setPassword("sS3pvALPxcWbTCEgXnzq9VYN");
+        dataSource.setDriverClassName(environment.getProperty("spring.datasource.driver-class"));
+        dataSource.setUrl(environment.getProperty("spring.datasource.url"));
+        dataSource.setUsername(environment.getProperty("spring.datasource.username"));
+        dataSource.setPassword(environment.getProperty("spring.datasource.password"));
         return dataSource;
     }
 
@@ -50,10 +55,10 @@ public class AppConfig
     public DataSource node2DataSource()
     {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://ccscloud.dlsu.edu.ph:20190/mco2");
-        dataSource.setUsername("user");
-        dataSource.setPassword("sS3pvALPxcWbTCEgXnzq9VYN");
+        dataSource.setDriverClassName(environment.getProperty("spring.datasource.driver-class"));
+        dataSource.setUrl(environment.getProperty("spring.datasource.slave1.url"));
+        dataSource.setUsername(environment.getProperty("spring.datasource.username"));
+        dataSource.setPassword(environment.getProperty("spring.datasource.password"));
         return dataSource;
     }
 
@@ -61,10 +66,10 @@ public class AppConfig
     public DataSource node3DataSource()
     {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://ccscloud.dlsu.edu.ph:20191/mco2");
-        dataSource.setUsername("user");
-        dataSource.setPassword("sS3pvALPxcWbTCEgXnzq9VYN");
+        dataSource.setDriverClassName(environment.getProperty("spring.datasource.driver-class"));
+        dataSource.setUrl(environment.getProperty("spring.datasource.slave2.url"));
+        dataSource.setUsername(environment.getProperty("spring.datasource.username"));
+        dataSource.setPassword(environment.getProperty("spring.datasource.password"));
         return dataSource;
     }
 
