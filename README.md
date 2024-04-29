@@ -1,6 +1,5 @@
 # Distributed Database System
 
-## Project Overview
 This project provides a simulation interface for a distributed database system using written SQL transactions and customizable isolation levels. Using De La Salle University's CCS Cloud Platform, the distributed database is hosted across three virtual machines with MySQL. The structure of the distributed database follows a **master-slave architecture**, which has exactly three nodes:
 1. **Central Node (Master)**
      - Contains all appointment records
